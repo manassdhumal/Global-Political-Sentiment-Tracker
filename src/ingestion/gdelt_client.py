@@ -98,18 +98,18 @@ def _parse_gdelt_date(s: str) -> str:
     return datetime.strptime(s[:8], "%Y%m%d").strftime("%Y-%m-%d")
 
 
-def fetch_daily_tone(query: str, country: str, start: date, end: date,
-                     *, session: requests.Session) -> dict[str, float]:
-    """Return {YYYY-MM-DD: average_tone} for the query+country window."""
-    full_query = f"{query} sourcecountry:{country}"
+def _full_query(query: str, country: str | None) -> str:
+    return f"{query} sourcecountry:{country}" if country else query
+
+
+def _timeline(query: str, country: str | None, start: date, end: date, mode: str,
+              *, session: requests.Session, max_retries: int) -> dict[str, float]:
     params = {
-        "query": full_query,
-        "mode": "timelinetone",
-        "format": "json",
-        "startdatetime": _fmt_dt(start),
-        "enddatetime": _fmt_dt(end),
+        "query": _full_query(query, country),
+        "mode": mode, "format": "json",
+        "startdatetime": _fmt_dt(start), "enddatetime": _fmt_dt(end),
     }
-    data = _get(params, session=session)
+    data = _get(params, session=session, max_retries=max_retries)
     out: dict[str, float] = {}
     for series in data.get("timeline", []):
         for point in series.get("data", []):
@@ -120,22 +120,40 @@ def fetch_daily_tone(query: str, country: str, start: date, end: date,
     return out
 
 
-def fetch_articles(query: str, country: str, start: date, end: date,
-                   *, max_records: int = 250,
-                   session: Optional[requests.Session] = None) -> list[GdeltArticle]:
+def fetch_daily_tone(query: str, country: str | None = None, start: date = None,
+                     end: date = None, *, session: requests.Session,
+                     max_retries: int = 3) -> dict[str, float]:
+    """Return {YYYY-MM-DD: average_tone}. country=None -> global (no filter)."""
+    return _timeline(query, country, start, end, "timelinetone",
+                     session=session, max_retries=max_retries)
+
+
+def fetch_daily_volume(query: str, country: str | None = None, start: date = None,
+                       end: date = None, *, session: requests.Session,
+                       max_retries: int = 3) -> dict[str, float]:
+    """Return {YYYY-MM-DD: raw_article_count}. country=None -> global."""
+    return _timeline(query, country, start, end, "timelinevolraw",
+                     session=session, max_retries=max_retries)
+
+
+def fetch_articles(query: str, country: str | None = None, start: date = None,
+                   end: date = None, *, max_records: int = 250,
+                   session: Optional[requests.Session] = None,
+                   max_retries: int = 3) -> list[GdeltArticle]:
     """Pull article metadata for the window and attach daily-average tone.
 
-    See the module docstring for why tone is a daily-average approximation.
+    country=None -> global artlist (per-article source country used). See the
+    module docstring for why tone is a daily-average approximation.
     """
     close_session = session is None
     session = session or requests.Session()
     try:
-        daily_tone = fetch_daily_tone(query, country, start, end, session=session)
+        daily_tone = fetch_daily_tone(query, country, start, end, session=session,
+                                      max_retries=max_retries)
         overall = (sum(daily_tone.values()) / len(daily_tone)) if daily_tone else None
 
-        full_query = f"{query} sourcecountry:{country}"
         params = {
-            "query": full_query,
+            "query": _full_query(query, country),
             "mode": "artlist",
             "format": "json",
             "maxrecords": str(max_records),
@@ -143,7 +161,7 @@ def fetch_articles(query: str, country: str, start: date, end: date,
             "startdatetime": _fmt_dt(start),
             "enddatetime": _fmt_dt(end),
         }
-        data = _get(params, session=session)
+        data = _get(params, session=session, max_retries=max_retries)
 
         articles: list[GdeltArticle] = []
         for a in data.get("articles", []):
@@ -156,7 +174,7 @@ def fetch_articles(query: str, country: str, start: date, end: date,
                 title=a.get("title", ""),
                 domain=a.get("domain", ""),
                 language=a.get("language", ""),
-                country=country,
+                country=country or a.get("sourcecountry", ""),
                 seen_date=iso_day,
                 tone=daily_tone.get(iso_day, overall),
             ))

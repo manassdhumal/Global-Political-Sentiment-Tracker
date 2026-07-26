@@ -26,7 +26,8 @@ interface Analysis {
   drivers: { spike_week: string | null; topics: { words: string[]; weight: number }[] };
   by_country: CRow[];
   by_language: { language: string; avg_tone: number; volume: number }[];
-  stats: { total_articles: number; total_posts: number; max_diversity: number; low_conf_weeks: number; n_weeks: number };
+  stats: { total_articles: number; total_posts: number; max_diversity: number; low_conf_weeks: number; n_weeks: number;
+    source_media: string; source_opinion: string; geo_modelled: boolean };
 }
 
 function SearchBar({ initial }: { initial: string }) {
@@ -136,6 +137,11 @@ function TopicInner() {
             {data.topic.custom && <Badge tone="warning">custom</Badge>}
             <span className="text-xs text-muted">· tracked since {data.inception} ({data.age_weeks} weeks of history)</span>
           </div>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
+            <Badge>media: {data.stats.source_media}</Badge>
+            <Badge>social: {data.stats.source_opinion}</Badge>
+            {data.stats.source_media === "synthetic" && <span>· synthetic fallback (live needs GDELT/keys)</span>}
+          </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <StatTile label="Avg media tone" value={fmtSigned(data.avg_media)} accent={t.accent} />
@@ -173,7 +179,9 @@ function TopicInner() {
           </div>
 
           <Card className="p-2">
-            <div className="px-2 pt-2 text-sm font-medium">Coverage tone by country</div>
+            <div className="px-2 pt-2 text-sm font-medium">
+              Coverage tone by country{data.stats.geo_modelled && <span className="ml-1 text-xs font-normal text-muted">(modelled distribution)</span>}
+            </div>
             {mapReady ? <EChart height={420} option={mapOption} /> : <Spinner label="Loading map…" />}
           </Card>
 

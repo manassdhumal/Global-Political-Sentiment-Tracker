@@ -1,6 +1,7 @@
 """On-demand analysis bundle for any topic — reuses the analytics layer."""
 from __future__ import annotations
 
+import os
 from datetime import date, datetime, timezone
 
 import pandas as pd
@@ -10,8 +11,36 @@ from ..ingestion.synthetic import _LANG
 from ..analytics import (weekly_weighted_series, country_tone_summary,
                          forecast_tone, detect_anomalies, biggest_spike_week,
                          extract_topics)
-from . import synth
+from . import synth, live
 from .catalog import Topic, resolve_topic
+
+_LIVE_SOURCES = {"auto", "live", "gdelt"}
+
+
+def _media_pack(query: str, start: date, end: date, source: str,
+                countries: list[str]) -> dict:
+    """Media weekly series + geography + driver titles, from live or synthetic.
+
+    Geography (by_country/by_language) is always modelled — per-country live
+    pulls are too many GDELT calls for an on-demand request.
+    """
+    by_country = synth.by_country_weekly(query, end, countries)  # modelled geo
+    if source in _LIVE_SOURCES:
+        lm = live.live_media(query, start, end)
+        if lm:
+            titles = lm["titles"] or synth.titles(query)
+            return {"media": lm["media"], "by_country": by_country, "titles": titles,
+                    "source": "gdelt", "geo_modelled": True}
+    return {"media": weekly_weighted_series(by_country), "by_country": by_country,
+            "titles": synth.titles(query), "source": "synthetic", "geo_modelled": False}
+
+
+def _opinion_pack(query: str, start: date, end: date, source: str) -> dict:
+    if source in _LIVE_SOURCES:
+        lo = live.live_opinion(query, start, end)
+        if lo is not None and not lo.empty:
+            return {"opinion": lo, "source": "reddit+bluesky"}
+    return {"opinion": synth.opinion_weekly(query, end), "source": "synthetic"}
 
 
 def _recs(df: pd.DataFrame, cols: list[str]) -> list[dict]:
@@ -23,18 +52,23 @@ def _recs(df: pd.DataFrame, cols: list[str]) -> list[dict]:
     return d.where(pd.notna(d), None).to_dict("records")
 
 
-def analyze_topic(query: str, *, end: date | None = None) -> dict:
+def analyze_topic(query: str, *, end: date | None = None,
+                  source: str | None = None) -> dict:
     topic: Topic = resolve_topic(query)
     end = end or datetime.now(timezone.utc).date()
+    source = (source or os.getenv("GPST_TOPIC_SOURCE", "synthetic")).lower()
     wl = load_watchlist()
     countries = wl.gdelt_country_codes
     meta = synth.topic_meta(topic.query, end)
 
-    by_country = synth.by_country_weekly(topic.query, end, countries)
-    opinion = synth.opinion_weekly(topic.query, end)
+    mp = _media_pack(topic.query, meta["inception"], end, source, countries)
+    op = _opinion_pack(topic.query, meta["inception"], end, source)
+    by_country = mp["by_country"]
+    titles = mp["titles"]
+    opinion = op["opinion"]
 
-    # --- media global (volume-weighted across countries) ---
-    media = weekly_weighted_series(by_country)  # week_start, avg_tone, article_volume, ...
+    # --- media global series (live or synthetic) ---
+    media = mp["media"]  # week_start, avg_tone, article_volume, low_confidence
     # --- opinion combined ---
     opin_all = opinion[opinion["source"] == "all"].sort_values("week_start") if not opinion.empty else opinion
 
@@ -56,8 +90,7 @@ def analyze_topic(query: str, *, end: date | None = None) -> dict:
 
     # --- drivers (topic modeling on titles around the spike) ---
     spike = biggest_spike_week(media) if not media.empty else None
-    drv = extract_topics(synth.titles(topic.query, near_shock=True),
-                         n_topics=3, extra_stopwords=topic.label.split())
+    drv = extract_topics(titles, n_topics=3, extra_stopwords=topic.label.split())
 
     # --- per country + per language ---
     csum = country_tone_summary(by_country)
@@ -103,8 +136,9 @@ def analyze_topic(query: str, *, end: date | None = None) -> dict:
             "total_articles": int(by_country["article_volume"].sum()) if not by_country.empty else 0,
             "total_posts": int(opinion[opinion["source"] != "all"]["post_volume"].sum()) if not opinion.empty else 0,
             "max_diversity": int(by_country["source_diversity"].max()) if not by_country.empty else 0,
-            "low_conf_weeks": int(media["low_confidence"].sum()) if not media.empty else 0,
+            "low_conf_weeks": int(media["low_confidence"].sum()) if "low_confidence" in media and not media.empty else 0,
             "n_weeks": int(media["week_start"].nunique()) if not media.empty else 0,
-            "source_media": "synthetic", "source_opinion": "synthetic",
+            "source_media": mp["source"], "source_opinion": op["source"],
+            "geo_modelled": mp["geo_modelled"],
         },
     }

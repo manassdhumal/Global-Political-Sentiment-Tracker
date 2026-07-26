@@ -35,6 +35,22 @@ def test_analyze_custom_topic():
     assert a["media_series"]                    # open-ended topic still analysable
 
 
+def test_live_weekly_transform():
+    from src.topics.live import weekly_from_daily
+    w = weekly_from_daily({"2026-01-05": 2.0, "2026-01-06": 4.0, "2026-01-12": -3.0},
+                          {"2026-01-05": 10, "2026-01-06": 30, "2026-01-12": 5})
+    # Jan 5 (Mon) week: volume-weighted (2*10 + 4*30)/40 = 3.5
+    assert abs(float(w.iloc[0]["avg_tone"]) - 3.5) < 1e-6
+    assert int(w.iloc[0]["article_volume"]) == 40
+
+
+def test_source_labels_present():
+    a = analyze_topic("inflation")           # default synthetic
+    assert a["stats"]["source_media"] == "synthetic"
+    assert a["stats"]["source_opinion"] == "synthetic"
+    assert "geo_modelled" in a["stats"]
+
+
 def test_trending_and_snapshot():
     tr = trending(top_n=5)
     assert len(tr) == 5

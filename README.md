@@ -86,6 +86,11 @@ there (never commit `.env`):
 
 Without credentials everything still runs on synthetic data.
 
+To make topic analysis prefer **live** data (GDELT media + social opinion, with
+per-piece synthetic fallback), set `GPST_TOPIC_SOURCE=auto` — or pass
+`?source=auto` to `/api/topic`. Each topic page shows its actual data source
+(`media: gdelt/synthetic`, `social: reddit+bluesky/synthetic`).
+
 ## Topics
 
 You don't need to register a topic to analyse it — **type anything** on the

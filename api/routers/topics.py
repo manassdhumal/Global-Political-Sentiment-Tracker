@@ -27,9 +27,15 @@ def get_topics() -> dict:
 
 
 @router.get("/topic")
-def get_topic(q: str = Query(..., min_length=1, max_length=120)) -> dict:
-    """Full on-demand analysis for ANY topic (catalog slug or free text)."""
+def get_topic(q: str = Query(..., min_length=1, max_length=120),
+              source: str | None = Query(None, pattern="^(auto|live|gdelt|synthetic)$")) -> dict:
+    """Full on-demand analysis for ANY topic (catalog slug or free text).
+
+    source: 'synthetic' (default here) | 'auto'/'live' (try GDELT + social,
+    fall back to synthetic per-piece). Also set GPST_TOPIC_SOURCE to change the
+    default on a live-capable machine.
+    """
     try:
-        return analyze_topic(q)
+        return analyze_topic(q, source=source)
     except ValueError as exc:
         raise HTTPException(400, str(exc))
