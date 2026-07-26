@@ -28,8 +28,10 @@ export default function MethodologyPage() {
       </Section>
 
       <Section title="How a score is built">
-        <p><b className="text-foreground">Media:</b> coverage is pulled from GDELT, cleaned (dedup, country/date normalization), and rolled up to <b>entity × country × ISO-week</b>, volume-weighted.</p>
-        <p><b className="text-foreground">Public:</b> posts are fetched per entity, each post&apos;s text is scored by the model, then aggregated to <b>entity × source × week</b> (author handles are hashed for privacy).</p>
+        <p><b className="text-foreground">Open-ended topics:</b> any topic is a query. Trending and Browse rank a curated catalog, but the &ldquo;Analyze a topic&rdquo; page runs the same analysis on <b>anything you type</b> — on demand.</p>
+        <p><b className="text-foreground">Media:</b> coverage is pulled from GDELT, cleaned, and rolled up to weekly tone (volume-weighted across countries).</p>
+        <p><b className="text-foreground">Public:</b> social posts are fetched per topic, each post&apos;s text scored by the model, then aggregated weekly (author handles hashed for privacy).</p>
+        <p><b className="text-foreground">History:</b> each topic&apos;s series runs from when it first appeared (its &ldquo;inception&rdquo;), so timelines can span years and vary in length by topic.</p>
       </Section>
 
       <Section title="Data-integrity signals (shown throughout)">
@@ -47,8 +49,8 @@ export default function MethodologyPage() {
       </Section>
 
       <p className="text-xs text-muted">
-        Currently tracking <b>{config?.entities.length ?? "…"}</b> entities across <b>{config?.countries.length ?? "…"}</b> countries.
-        The watchlist is fully config-driven (<code>config/watchlist.yaml</code>).
+        The browse catalog is curated in <code>config/topics.yaml</code>, but the system is
+        <b> open-ended</b> — any topic can be analysed on demand, across <b>{config?.countries.length ?? "…"}</b> countries.
       </p>
     </div>
   );

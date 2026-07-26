@@ -3,38 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home, Search, Map, LineChart, Globe2, Scale, Layers, Activity,
-  TrendingUp, Target, Languages, GitCompareArrows, PenLine, FileText,
-  BookOpen, Menu, X,
-} from "lucide-react";
+import { TrendingUp, LayoutGrid, Search, BookOpen, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useConfig } from "./config-context";
 import { cx, Badge } from "./ui";
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
 const NAV: { section: string; items: Item[] }[] = [
-  { section: "Overview", items: [
-    { href: "/", label: "Political mood", icon: Home },
-    { href: "/search", label: "Search", icon: Search },
-  ]},
-  { section: "Explore", items: [
-    { href: "/world-map", label: "World map", icon: Map },
-    { href: "/tone", label: "Tone over time", icon: LineChart },
-    { href: "/cross-country", label: "Cross-country", icon: Globe2 },
-    { href: "/entities", label: "Entity vs entity", icon: Scale },
-    { href: "/issues", label: "Issue drill-down", icon: Layers },
-    { href: "/volatility", label: "Volatility", icon: Activity },
-  ]},
-  { section: "Intelligence", items: [
-    { href: "/compare", label: "Media vs Public", icon: GitCompareArrows },
-    { href: "/forecast", label: "Forecast & alerts", icon: TrendingUp },
-    { href: "/event-impact", label: "Event impact", icon: Target },
-    { href: "/framing", label: "Cross-language", icon: Languages },
-  ]},
-  { section: "Your text & reports", items: [
-    { href: "/analyze", label: "Analyze text", icon: PenLine },
-    { href: "/reports", label: "Reports", icon: FileText },
+  { section: "", items: [
+    { href: "/", label: "Trending", icon: TrendingUp },
+    { href: "/topics", label: "Browse topics", icon: LayoutGrid },
+    { href: "/topic", label: "Analyze a topic", icon: Search },
     { href: "/methodology", label: "Methodology", icon: BookOpen },
   ]},
 ];
@@ -45,12 +24,16 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
       {NAV.map((group) => (
         <div key={group.section}>
-          <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
-            {group.section}
-          </div>
+          {group.section && (
+            <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
+              {group.section}
+            </div>
+          )}
           <div className="space-y-0.5">
             {group.items.map((it) => {
-              const active = it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
+              const active = it.href === "/"
+                ? pathname === "/"
+                : pathname === it.href || pathname.startsWith(it.href + "/");
               const Icon = it.icon;
               return (
                 <Link

@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api import deps
 from api.routers import config as config_router
-from api.routers import explore, intelligence, nlp, misc, opinion
+from api.routers import explore, intelligence, nlp, misc, opinion, topics
 
 app = FastAPI(
     title="Global Political Sentiment Tracker API",
@@ -48,6 +48,7 @@ app.include_router(intelligence.router)
 app.include_router(nlp.router)
 app.include_router(misc.router)
 app.include_router(opinion.router)
+app.include_router(topics.router)
 
 
 @app.get("/health", tags=["meta"])

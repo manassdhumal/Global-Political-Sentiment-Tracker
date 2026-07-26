@@ -11,32 +11,37 @@ sentiment comes from Reddit + Bluesky posts scored by a local RoBERTa model.
 > Thin coverage is flagged low-confidence; translation, sarcasm, and outlet bias
 > all affect tone.
 
-## Features
+## Three focused sections
 
-- **World map** choropleth of coverage tone per country; cross-country,
-  entity-vs-entity, and issue drill-downs.
-- **Media vs Public** — press tone vs social sentiment per entity, and the gap.
-- **Intelligence**: short-term forecasting, anomaly/early-warning detection,
-  topic modeling on spikes, event-impact scoring, cross-language framing.
-- **Analyze your own text**: overall score, per-entity **aspect-based** sentiment,
-  explainability highlighting, and comparison against the live trend.
-- **Political-mood homepage**, global search, exportable reports (Markdown/PDF),
-  volatility index, event annotations, and a methodology page.
-- Fully **config-driven** watchlist — no tracked names hardcoded.
+1. **Trending** — what's moving right now: a global snapshot, the biggest
+   rising/falling topics, and a live trending grid (attention + sentiment shift).
+2. **Browse topics** — the full catalog (people, parties, issues, institutions,
+   geopolitics), searchable and filterable by category.
+3. **Analyze a topic** — the system is **open-ended**: type *any* topic (a person,
+   party, issue, or free-text phrase) and get its full analysis on one page —
+   **media vs public** sentiment over its **entire history** (since the topic first
+   appeared), forecast + anomalies, what's driving it (topic modeling), and
+   coverage by country and language.
+
+Each topic's timeline runs from its own **inception**, so histories span years and
+vary in length by topic. Every insight is on one page — no navigation maze.
 
 ## Architecture
 
 ```
-config/           watchlist.yaml + events.csv (single source of truth)
+config/           topics.yaml (browse catalog) · watchlist.yaml · events.csv
+src/topics/       open-ended, on-demand topic engine (catalog · synth · analyze · trending)
 src/              ingestion · processing · storage · analytics · nlp · reporting
 api/              FastAPI service exposing everything as JSON (/docs for Swagger)
-frontend/         Next.js + React + Tailwind dashboard (dark-first, light/dark)
+frontend/         Next.js + React + Tailwind (3-section, dark-first, light/dark)
 src/dashboard/    legacy Streamlit UI (deprecated — see below)
 ```
 
-Data is rolled up to **entity × country × week** (media) and
-**entity × source × week** (opinion). The Python stack stays lean; heavier
-backends (transformers/RoBERTa, spaCy) are optional and auto-detected.
+Topics are analysed **on demand** — media tone from GDELT, social sentiment from
+Reddit/Bluesky scored by a local RoBERTa model. When live sources are
+unavailable, a deterministic **synthetic fallback** generates a long history for
+any topic (clearly flagged, never presented as real). The Python stack stays
+lean; heavier backends are optional and auto-detected.
 
 ## Setup
 
@@ -49,23 +54,27 @@ cd frontend && npm install && cd ..      # frontend
 
 ## Run
 
+The v3 app analyses topics **on demand** — no pre-build step needed:
+
 ```bash
-# 1. Build the media database (tries live GDELT, else synthetic demo data)
-python scripts/run_pipeline.py --source auto
-
-# 2. Build the public-opinion layer (RoBERTa-scored; synthetic if no creds)
-python scripts/run_opinion_pipeline.py --source auto
-
-# 3. Start the API
+# 1. Start the API
 uvicorn api.main:app --port 8000         # http://localhost:8000/docs
 
-# 4. Start the frontend (separate terminal)
+# 2. Start the frontend (separate terminal)
 cd frontend && npm run dev               # http://localhost:3000
 ```
 
-> **Offline-friendly.** GDELT rate-limits, and Reddit/Bluesky need credentials —
-> when unavailable, both pipelines fall back to deterministic **synthetic**
-> data, clearly flagged in the UI and never presented as real.
+> **Offline-friendly.** GDELT rate-limits and Reddit/Bluesky need credentials —
+> when unavailable, topic analysis falls back to deterministic **synthetic**
+> data (a long history per topic), clearly flagged in the UI and never presented
+> as real.
+
+Optional legacy batch pipelines (feed the older aggregate endpoints + Streamlit):
+
+```bash
+python scripts/run_pipeline.py --source auto          # media
+python scripts/run_opinion_pipeline.py --source auto  # public opinion
+```
 
 ## Live data (optional)
 
@@ -77,18 +86,16 @@ there (never commit `.env`):
 
 Without credentials everything still runs on synthetic data.
 
-## Add a tracked entity
+## Topics
 
-Edit [`config/watchlist.yaml`](config/watchlist.yaml) and re-run the pipelines:
+You don't need to register a topic to analyse it — **type anything** on the
+"Analyze a topic" page. To add a topic to the **Browse catalog / Trending**
+pool, add an entry to [`config/topics.yaml`](config/topics.yaml):
 
 ```yaml
-entities:
-  - id: some_id
-    name: Display Name
-    type: figure           # figure | party | theme
-    home_country: US        # GDELT country code, or null for themes
-    query: '"Display Name"' # GDELT query fragment
-    aliases: ["Nickname"]
+topics:
+  - {id: my_topic, label: My Topic, query: "my topic", category: issue}
+    # category: figure | party | issue | institution | geopolitics
 ```
 
 ## Tests

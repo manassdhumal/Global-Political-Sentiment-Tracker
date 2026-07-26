@@ -52,9 +52,9 @@ def anomalies(entity: str, country: str | None = None,
     }
 
 
-@router.get("/topics")
-def topics(entity: str, country: str | None = None,
-           n_topics: int = Query(3, ge=1, le=6)) -> dict:
+@router.get("/spike-topics")
+def spike_topics(entity: str, country: str | None = None,
+                 n_topics: int = Query(3, ge=1, le=6)) -> dict:
     hist = _entity_series(entity, country)
     if hist.empty:
         raise HTTPException(404, "No data for this selection.")
