@@ -1,4 +1,9 @@
-"""Global Political Sentiment Tracker — Streamlit dashboard (Phase 2).
+"""Global Political Sentiment Tracker — Streamlit dashboard (LEGACY).
+
+DEPRECATED as of v2: the primary UI is now the Next.js/React frontend in
+`frontend/` (backed by the FastAPI service in `api/`), which also adds the
+public-opinion / media-vs-public views. This Streamlit app is kept as a
+lightweight, dependency-light fallback and is no longer the maintained path.
 
 Multipage app (st.navigation). Run from the project root:
     streamlit run src/dashboard/app.py
