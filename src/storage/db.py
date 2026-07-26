@@ -157,6 +157,77 @@ def read_language_summary(conn: sqlite3.Connection, entity_id: str,
     return pd.read_sql_query(sql, conn, params=params)
 
 
+def upsert_opinion_posts(conn: sqlite3.Connection, posts: pd.DataFrame) -> int:
+    """Insert/replace scored opinion posts."""
+    if posts.empty:
+        return 0
+    cols = ["id", "entity_id", "source", "community", "lang", "text",
+            "created_date", "sentiment", "author_hash", "url"]
+    df = posts.reindex(columns=cols)
+    conn.executemany(
+        f"""
+        INSERT INTO opinion_posts ({",".join(cols)})
+        VALUES ({",".join("?" for _ in cols)})
+        ON CONFLICT(id) DO UPDATE SET
+            sentiment=excluded.sentiment,
+            text=excluded.text,
+            created_date=excluded.created_date
+        """,
+        df.itertuples(index=False, name=None),
+    )
+    conn.commit()
+    return len(df)
+
+
+def upsert_opinion_scores(conn: sqlite3.Connection, scores: pd.DataFrame) -> int:
+    """Insert/replace aggregated opinion (entity x source x week) rows."""
+    if scores.empty:
+        return 0
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    cols = ["entity_id", "source", "week_start", "avg_sentiment",
+            "post_volume", "unique_authors", "low_confidence"]
+    df = scores.reindex(columns=cols).copy()
+    df["updated_at"] = now
+    conn.executemany(
+        """
+        INSERT INTO opinion_scores
+            (entity_id, source, week_start, avg_sentiment, post_volume,
+             unique_authors, low_confidence, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(entity_id, source, week_start) DO UPDATE SET
+            avg_sentiment=excluded.avg_sentiment,
+            post_volume=excluded.post_volume,
+            unique_authors=excluded.unique_authors,
+            low_confidence=excluded.low_confidence,
+            updated_at=excluded.updated_at
+        """,
+        df[cols + ["updated_at"]].itertuples(index=False, name=None),
+    )
+    conn.commit()
+    return len(df)
+
+
+def read_opinion_scores(conn: sqlite3.Connection,
+                        entity_ids: Iterable[str] | None = None) -> pd.DataFrame:
+    """Return opinion_scores, optionally filtered by entity."""
+    sql = "SELECT * FROM opinion_scores"
+    params: list = []
+    if entity_ids:
+        entity_ids = list(entity_ids)
+        sql += f" WHERE entity_id IN ({','.join('?' * len(entity_ids))})"
+        params += entity_ids
+    sql += " ORDER BY week_start"
+    df = pd.read_sql_query(sql, conn, params=params)
+    if not df.empty:
+        df["week_start"] = pd.to_datetime(df["week_start"])
+    return df
+
+
+def has_opinion_data(conn: sqlite3.Connection) -> bool:
+    row = conn.execute("SELECT COUNT(*) FROM opinion_scores").fetchone()
+    return bool(row and row[0])
+
+
 def read_titles(conn: sqlite3.Connection, entity_id: str,
                 w0: str | None = None, w1: str | None = None,
                 country: str | None = None, limit: int = 2000) -> list[str]:

@@ -47,6 +47,28 @@ class SentimentScorer:
     def label(self, text: str) -> str:
         return score_to_label(self.score(text))
 
+    def score_many(self, texts: list[str], *, batch_size: int = 64) -> list[float]:
+        """Score many texts (batched for the transformers backend)."""
+        if not texts:
+            return []
+        if self.backend != "transformers":
+            return [self.score(t) for t in texts]
+        try:
+            out: list[float] = []
+            cleaned = [(t or "")[:512] if (t and t.strip()) else "" for t in texts]
+            results = self._impl(cleaned, batch_size=batch_size, truncation=True)
+            for r, t in zip(results, cleaned):
+                if not t:
+                    out.append(0.0)
+                    continue
+                label = r["label"].lower()
+                conf = float(r["score"])
+                sign = 1.0 if "pos" in label else (-1.0 if "neg" in label else 0.0)
+                out.append(round(sign * conf * 100, 2))
+            return out
+        except Exception:
+            return [self.score(t) for t in texts]
+
     # -- VADER --
     def _score_vader(self, text: str) -> float:
         return round(self._impl.polarity_scores(text)["compound"] * 100, 2)

@@ -9,4 +9,8 @@ from .db import (  # noqa: F401
     list_entities,
     read_language_summary,
     read_titles,
+    upsert_opinion_posts,
+    upsert_opinion_scores,
+    read_opinion_scores,
+    has_opinion_data,
 )

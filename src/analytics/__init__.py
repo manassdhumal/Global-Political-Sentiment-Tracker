@@ -15,3 +15,5 @@ from .anomaly import detect_anomalies, biggest_spike_week  # noqa: F401
 from .topics import extract_topics, Topic  # noqa: F401
 from .impact import event_impact, ImpactResult  # noqa: F401
 from .framing import domestic_vs_foreign, by_language  # noqa: F401
+from .compare import (  # noqa: F401
+    media_vs_public, media_weekly, public_weekly, divergence_summary)

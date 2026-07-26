@@ -35,7 +35,19 @@ fpdf2>=2.7             # PDF report export
 #   transformers + torch  -> RoBERTa sentiment backend (set GPST_SENTIMENT_BACKEND=transformers)
 #   spacy + en_core_web_sm -> NER enrichment for untracked entities
 
+# --- v2: API backend ---
+fastapi>=0.110         # JSON API for the React frontend
+uvicorn>=0.29          # ASGI server
+
+# --- v2: public-opinion layer + real sentiment ---
+torch>=2.2             # backs the RoBERTa sentiment model (CPU build is fine)
+transformers>=4.40     # RoBERTa social/news sentiment (local)
+praw>=7.7              # Reddit ingestion (needs .env credentials)
+atproto>=0.0.55        # Bluesky ingestion (needs .env credentials)
+python-dotenv>=1.0     # load credentials from .env
+
 # --- Dev ---
 pytest>=7.0            # test suite (tests/)
 
 # SQLite ships with the Python standard library — no dependency needed.
+# Node.js (v18+) is required separately for the React frontend (frontend/).

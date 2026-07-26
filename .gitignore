@@ -13,6 +13,11 @@ data/
 *.sqlite
 *.log
 
+# ---- Secrets / credentials (NEVER commit) ----
+.env
+*.env
+!.env.example
+
 # ---- Local tooling / editor ----
 .claude/
 .idea/

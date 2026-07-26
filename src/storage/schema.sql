@@ -48,3 +48,43 @@ CREATE TABLE IF NOT EXISTS aggregated_scores (
 );
 CREATE INDEX IF NOT EXISTS idx_agg_entity
     ON aggregated_scores (entity_id, week_start);
+
+-- =====================================================================
+-- PUBLIC / SOCIAL OPINION layer (v2)
+-- Posts from social platforms (Reddit, Bluesky) scored with a sentiment
+-- MODEL (RoBERTa) — distinct from GDELT media tone. This is SOCIAL
+-- sentiment (vocal, non-representative users), NOT representative public
+-- opinion. Author handles are HASHED for privacy; raw text is kept short.
+-- Opinion is aggregated per entity x source x week (global — social posts
+-- rarely carry reliable country geo).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS opinion_posts (
+    id            TEXT PRIMARY KEY,        -- hash of (source, entity_id, url/text)
+    entity_id     TEXT NOT NULL,
+    source        TEXT NOT NULL,           -- reddit | bluesky | synthetic
+    community     TEXT,                     -- subreddit / feed (optional)
+    lang          TEXT,
+    text          TEXT,                     -- short snippet (for topic/QA)
+    created_date  TEXT NOT NULL,            -- UTC ISO YYYY-MM-DD
+    sentiment     REAL,                     -- model sentiment, -100..+100
+    author_hash   TEXT,                     -- hashed author (privacy)
+    url           TEXT,
+    FOREIGN KEY (entity_id) REFERENCES entities(id)
+);
+CREATE INDEX IF NOT EXISTS idx_opinion_posts_esd
+    ON opinion_posts (entity_id, source, created_date);
+
+CREATE TABLE IF NOT EXISTS opinion_scores (
+    entity_id       TEXT NOT NULL,
+    source          TEXT NOT NULL,          -- reddit | bluesky | synthetic | all
+    week_start      TEXT NOT NULL,          -- Monday (YYYY-MM-DD)
+    avg_sentiment   REAL,                   -- mean model sentiment that week
+    post_volume     INTEGER NOT NULL,       -- # posts feeding the score
+    unique_authors  INTEGER NOT NULL,       -- distinct authors (diversity)
+    low_confidence  INTEGER NOT NULL,       -- 1 if too few posts/authors
+    updated_at      TEXT NOT NULL,
+    PRIMARY KEY (entity_id, source, week_start),
+    FOREIGN KEY (entity_id) REFERENCES entities(id)
+);
+CREATE INDEX IF NOT EXISTS idx_opinion_scores_entity
+    ON opinion_scores (entity_id, week_start);
