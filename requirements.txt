@@ -1,0 +1,41 @@
+# =====================================================================
+# Global Political Sentiment Tracker — dependencies
+# Kept intentionally LEAN through Phase 1 & 2.
+# Heavy ML deps (transformers, torch, spaCy, Prophet, BERTopic, SHAP)
+# are deferred to the phases that need them and added then.
+# =====================================================================
+
+# --- Core data handling ---
+pandas>=2.0
+numpy>=1.24
+
+# --- Config ---
+PyYAML>=6.0
+
+# --- HTTP / ingestion ---
+requests>=2.31
+httpx>=0.27
+
+# --- Dashboard ---
+streamlit>=1.30
+plotly>=5.18
+
+# --- Phase 3: intelligence layer ---
+statsmodels>=0.14      # ARIMA short-term tone forecasting
+scipy>=1.11            # anomaly detection (robust stats), impact t-test
+scikit-learn>=1.3      # topic modeling (CountVectorizer + LDA/NMF) on spikes
+# NOTE: BERTopic/Prophet intentionally NOT used — heavier and fragile on
+# Python 3.13. sklearn-LDA + statsmodels-ARIMA cover the same ground here;
+# BERTopic/Prophet remain a documented upgrade path.
+
+# --- Phase 4: user text analysis + reports ---
+vaderSentiment>=3.3    # default sentiment engine (bundled lexicon, offline)
+fpdf2>=2.7             # PDF report export
+# OPTIONAL (auto-detected if installed; not required):
+#   transformers + torch  -> RoBERTa sentiment backend (set GPST_SENTIMENT_BACKEND=transformers)
+#   spacy + en_core_web_sm -> NER enrichment for untracked entities
+
+# --- Dev ---
+pytest>=7.0            # test suite (tests/)
+
+# SQLite ships with the Python standard library — no dependency needed.

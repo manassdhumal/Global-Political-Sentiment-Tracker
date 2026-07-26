@@ -1,0 +1,21 @@
+# Event annotation layer — known events rendered as markers on timeline charts.
+# Columns:
+#   date        : YYYY-MM-DD
+#   scope_type  : entity | country | global
+#   scope_id    : entity id (from watchlist) OR GDELT country code OR blank for global
+#   label       : short text shown on the marker
+#
+# NOTE: with the SYNTHETIC demo dataset these example events will NOT line up
+# with the (randomly injected) synthetic tone shocks — they demonstrate the
+# annotation MECHANISM. Against live GDELT data these should be real events.
+# Lines starting with '#' are ignored.
+date,scope_type,scope_id,label
+2026-04-20,global,,Example: G20 leaders summit
+2026-05-05,country,US,Example: US policy address
+2026-05-15,entity,joe_biden,Example: major speech
+2026-05-22,entity,donald_trump,Example: campaign rally
+2026-06-01,entity,narendra_modi,Example: state visit
+2026-06-10,country,FR,Example: national debate
+2026-06-18,entity,inflation,Example: central bank rate decision
+2026-07-01,global,,Example: international climate talks
+2026-07-08,entity,volodymyr_zelensky,Example: security conference

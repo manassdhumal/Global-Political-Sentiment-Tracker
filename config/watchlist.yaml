@@ -1,0 +1,96 @@
+# =====================================================================
+# Global Political Sentiment Tracker — Watchlist configuration
+# =====================================================================
+# This file is the SINGLE SOURCE OF TRUTH for what the system tracks.
+# The pipeline code never hardcodes entity/country/theme names — it
+# reads them from here. To track something new, add it here and re-run
+# the pipeline (scripts/run_pipeline.py).
+#
+# IMPORTANT FRAMING: This system measures the TONE OF NEWS COVERAGE
+# (GDELT's computed tone, -100 to +100), NOT public opinion. Every
+# number produced downstream is "media sentiment", not a poll.
+# ---------------------------------------------------------------------
+
+meta:
+  measures: "media_sentiment"          # NOT public opinion
+  tone_range: [-100, 100]              # GDELT tone scale
+  aggregation: "entity_country_week"   # grain of aggregated_scores
+
+# ---------------------------------------------------------------------
+# Countries (Phase 2 = worldwide spread, ~26 across all continents).
+#   gdelt : code GDELT expects in `sourcecountry:` (FIPS 10-4 style).
+#           NOTE: verify against GDELT's country list before live pulls;
+#           a few FIPS codes differ from ISO (e.g. Germany=GM, Japan=JA,
+#           China=CH, Russia=RS, Ukraine=UP, South Africa=SF).
+#   iso3  : ISO-3166 alpha-3, used by the Plotly choropleth.
+# LIMITATION: GDELT coverage is far denser for large, English-language
+# media markets than for smaller countries — read sparse countries with
+# care (the pipeline flags thin coverage as low-confidence).
+# ---------------------------------------------------------------------
+countries:
+  - {name: United States,   gdelt: US, iso3: USA}
+  - {name: United Kingdom,  gdelt: UK, iso3: GBR}
+  - {name: Canada,          gdelt: CA, iso3: CAN}
+  - {name: Germany,         gdelt: GM, iso3: DEU}
+  - {name: France,          gdelt: FR, iso3: FRA}
+  - {name: Italy,           gdelt: IT, iso3: ITA}
+  - {name: Spain,           gdelt: SP, iso3: ESP}
+  - {name: Netherlands,     gdelt: NL, iso3: NLD}
+  - {name: Poland,          gdelt: PL, iso3: POL}
+  - {name: Russia,          gdelt: RS, iso3: RUS}
+  - {name: Ukraine,         gdelt: UP, iso3: UKR}
+  - {name: Turkey,          gdelt: TU, iso3: TUR}
+  - {name: India,           gdelt: IN, iso3: IND}
+  - {name: China,           gdelt: CH, iso3: CHN}
+  - {name: Japan,           gdelt: JA, iso3: JPN}
+  - {name: South Korea,     gdelt: KS, iso3: KOR}
+  - {name: Indonesia,       gdelt: ID, iso3: IDN}
+  - {name: Australia,       gdelt: AS, iso3: AUS}
+  - {name: Brazil,          gdelt: BR, iso3: BRA}
+  - {name: Mexico,          gdelt: MX, iso3: MEX}
+  - {name: Argentina,       gdelt: AR, iso3: ARG}
+  - {name: South Africa,    gdelt: SF, iso3: ZAF}
+  - {name: Nigeria,         gdelt: NI, iso3: NGA}
+  - {name: Israel,          gdelt: IS, iso3: ISR}
+  - {name: Saudi Arabia,    gdelt: SA, iso3: SAU}
+  - {name: Egypt,           gdelt: EG, iso3: EGY}
+
+# ---------------------------------------------------------------------
+# Tracked entities: a mix of political FIGURES, PARTIES and issue THEMES.
+# `query` is the GDELT DOC 2.0 query fragment, combined with a
+# `sourcecountry:` filter at request time.
+#   type         : figure | party | theme
+#   home_country : GDELT code the entity is primarily associated with
+#                  (null for cross-cutting themes); tracked in ALL
+#                  configured countries regardless.
+# These are all widely-covered public political entities — tracking the
+# TONE OF COVERAGE about them is neutral analysis, not endorsement.
+# ---------------------------------------------------------------------
+entities:
+  # --- Political figures --------------------------------------------
+  - {id: joe_biden,          name: Joe Biden,                     type: figure, home_country: US, query: '"Joe Biden"',            aliases: [Biden]}
+  - {id: donald_trump,       name: Donald Trump,                  type: figure, home_country: US, query: '"Donald Trump"',         aliases: [Trump]}
+  - {id: keir_starmer,       name: Keir Starmer,                  type: figure, home_country: UK, query: '"Keir Starmer"',         aliases: [Starmer]}
+  - {id: rishi_sunak,        name: Rishi Sunak,                   type: figure, home_country: UK, query: '"Rishi Sunak"',          aliases: [Sunak]}
+  - {id: justin_trudeau,     name: Justin Trudeau,                type: figure, home_country: CA, query: '"Justin Trudeau"',       aliases: [Trudeau]}
+  - {id: emmanuel_macron,    name: Emmanuel Macron,               type: figure, home_country: FR, query: '"Emmanuel Macron"',      aliases: [Macron]}
+  - {id: olaf_scholz,        name: Olaf Scholz,                   type: figure, home_country: GM, query: '"Olaf Scholz"',          aliases: [Scholz]}
+  - {id: giorgia_meloni,     name: Giorgia Meloni,                type: figure, home_country: IT, query: '"Giorgia Meloni"',       aliases: [Meloni]}
+  - {id: vladimir_putin,     name: Vladimir Putin,                type: figure, home_country: RS, query: '"Vladimir Putin"',       aliases: [Putin]}
+  - {id: volodymyr_zelensky, name: Volodymyr Zelensky,            type: figure, home_country: UP, query: '(Zelensky OR Zelenskyy)', aliases: [Zelenskyy]}
+  - {id: narendra_modi,      name: Narendra Modi,                 type: figure, home_country: IN, query: '"Narendra Modi"',        aliases: [Modi]}
+  - {id: xi_jinping,         name: Xi Jinping,                    type: figure, home_country: CH, query: '"Xi Jinping"',           aliases: [Xi]}
+  - {id: anthony_albanese,   name: Anthony Albanese,              type: figure, home_country: AS, query: '"Anthony Albanese"',     aliases: [Albanese]}
+  - {id: lula,               name: Luiz Inácio Lula da Silva,     type: figure, home_country: BR, query: '(Lula OR "Luiz Inacio Lula da Silva")', aliases: [Lula]}
+  - {id: benjamin_netanyahu, name: Benjamin Netanyahu,            type: figure, home_country: IS, query: '(Netanyahu OR Netanyahu)', aliases: [Netanyahu]}
+
+  # --- Political party ----------------------------------------------
+  - {id: bjp,                name: Bharatiya Janata Party (BJP),  type: party,  home_country: IN, query: '(BJP OR "Bharatiya Janata Party")', aliases: [BJP]}
+
+  # --- Issue themes -------------------------------------------------
+  - {id: inflation,          name: Inflation & cost of living,    type: theme,  home_country: null, query: '(inflation OR "cost of living")',                aliases: ["cost of living", prices]}
+  - {id: immigration,        name: Immigration,                   type: theme,  home_country: null, query: '(immigration OR migrants OR "asylum seekers")',   aliases: [migration, migrants]}
+  - {id: climate_policy,     name: Climate policy,                type: theme,  home_country: null, query: '("climate change" OR "climate policy" OR "net zero")', aliases: ["climate change", "net zero"]}
+  - {id: unemployment,       name: Unemployment & jobs,           type: theme,  home_country: null, query: '(unemployment OR "job losses" OR "labour market")', aliases: [jobs, unemployment]}
+  - {id: healthcare,         name: Healthcare,                    type: theme,  home_country: null, query: '(healthcare OR "health care" OR hospitals)',       aliases: ["health care"]}
+  - {id: corruption,         name: Corruption,                    type: theme,  home_country: null, query: '(corruption OR bribery OR "graft scandal")',       aliases: [bribery, graft]}
