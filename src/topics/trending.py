@@ -7,12 +7,27 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
-from . import synth
+from . import synth, live, bigquery
 from .catalog import Topic, load_catalog
 
+_LIVE_SOURCES = {"auto", "live", "gdelt", "bigquery"}
 
-def _topic_row(t: Topic, end: date) -> dict | None:
-    g = synth.global_weekly(t.query, end)
+
+def _media_global(t: Topic, end: date, source: str) -> pd.DataFrame:
+    """Weekly global media (week_start, avg_tone, article_volume) for trending."""
+    if source in _LIVE_SOURCES:
+        start = end - timedelta(weeks=synth.MAX_WEEKS)
+        bm = bigquery.bq_media_weekly(t.query, start, end) if source != "gdelt" else None
+        if bm is not None and not bm.empty:
+            return bm[["week_start", "avg_tone", "article_volume"]]
+        lm = live.live_media(t.query, start, end)
+        if lm:
+            return lm["media"][["week_start", "avg_tone", "article_volume"]]
+    return synth.global_weekly(t.query, end)
+
+
+def _topic_row(t: Topic, end: date, source: str = "synthetic") -> dict | None:
+    g = _media_global(t, end, source)
     if g.empty or len(g) < 2:
         return None
     tone = g["avg_tone"].to_numpy()
@@ -39,10 +54,10 @@ def _topic_row(t: Topic, end: date) -> dict | None:
     }
 
 
-@lru_cache(maxsize=8)
-def _compute(end_iso: str) -> list[dict]:
+@lru_cache(maxsize=16)
+def _compute(end_iso: str, source: str) -> list[dict]:
     end = date.fromisoformat(end_iso)
-    rows = [r for t in load_catalog() if (r := _topic_row(t, end))]
+    rows = [r for t in load_catalog() if (r := _topic_row(t, end, source))]
     if not rows:
         return []
     vols = np.array([r["recent_volume"] for r in rows], dtype=float)
@@ -54,23 +69,23 @@ def _compute(end_iso: str) -> list[dict]:
     return rows
 
 
-def _all_rows(end: date | None = None) -> list[dict]:
+def _all_rows(end: date | None = None, source: str = "synthetic") -> list[dict]:
     end = end or datetime.now(timezone.utc).date()
     end_m = end - timedelta(days=end.weekday())
-    return _compute(end_m.isoformat())
+    return _compute(end_m.isoformat(), source)
 
 
-def trending(top_n: int = 12, end: date | None = None) -> list[dict]:
-    return _all_rows(end)[:top_n]
+def trending(top_n: int = 12, end: date | None = None, source: str = "synthetic") -> list[dict]:
+    return _all_rows(end, source)[:top_n]
 
 
-def catalog_stats(end: date | None = None) -> list[dict]:
+def catalog_stats(end: date | None = None, source: str = "synthetic") -> list[dict]:
     """Every catalog topic with quick stats (for the Browse page)."""
-    return sorted(_all_rows(end), key=lambda r: r["label"])
+    return sorted(_all_rows(end, source), key=lambda r: r["label"])
 
 
-def global_snapshot(end: date | None = None) -> dict:
-    rows = _all_rows(end)
+def global_snapshot(end: date | None = None, source: str = "synthetic") -> dict:
+    rows = _all_rows(end, source)
     if not rows:
         return {"global_tone": None, "total_volume": 0, "n_topics": 0}
     vols = np.array([r["recent_volume"] for r in rows], dtype=float)

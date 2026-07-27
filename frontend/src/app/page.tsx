@@ -11,7 +11,7 @@ interface Snapshot {
   global_tone: number | null; total_volume: number; n_topics: number; avg_gap: number | null;
   top_rising: TopicStat[]; top_falling: TopicStat[];
 }
-interface TrendingResp { snapshot: Snapshot; trending: TopicStat[]; }
+interface TrendingResp { snapshot: Snapshot; trending: TopicStat[]; cached?: boolean; computed_at?: string; source?: string; }
 
 function MoverRow({ t }: { t: TopicStat }) {
   const up = t.movement >= 0;
@@ -61,7 +61,14 @@ export default function TrendingPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Trending topics</h2>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-sm font-semibold">Trending topics</h2>
+              {data.computed_at && (
+                <span className="text-[11px] text-muted">
+                  · {data.source} · updated {new Date(data.computed_at).toLocaleString()}
+                </span>
+              )}
+            </div>
             <Link href="/topics" className="text-sm text-accent hover:underline">Browse all topics →</Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

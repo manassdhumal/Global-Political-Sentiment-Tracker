@@ -6,14 +6,28 @@ from fastapi import APIRouter, HTTPException, Query
 from src.topics import analyze_topic, trending, global_snapshot
 from src.topics.catalog import categories, load_catalog
 from src.topics.trending import catalog_stats
+from src.topics.cache import read_trending
 
 router = APIRouter(prefix="/api", tags=["topics"])
 
 
 @router.get("/trending")
-def get_trending(top_n: int = Query(12, ge=1, le=40)) -> dict:
-    """Global snapshot + the most trending topics (volume + movement)."""
-    return {"snapshot": global_snapshot(), "trending": trending(top_n=top_n)}
+def get_trending(top_n: int = Query(12, ge=1, le=40),
+                 max_age_hours: float = Query(12.0, ge=0)) -> dict:
+    """Global snapshot + most trending topics (volume + movement).
+
+    Serves a precomputed snapshot (scripts/precompute_trending.py) when fresh —
+    which lets trending use real/live data without paying the cost per request.
+    Falls back to computing on the fly (synthetic).
+    """
+    cached = read_trending(max_age_hours=max_age_hours)
+    if cached and cached.get("trending"):
+        return {"snapshot": cached["snapshot"],
+                "trending": cached["trending"][:top_n],
+                "cached": True, "computed_at": cached.get("computed_at"),
+                "source": cached.get("source", "synthetic")}
+    return {"snapshot": global_snapshot(), "trending": trending(top_n=top_n),
+            "cached": False, "source": "synthetic"}
 
 
 @router.get("/topics")

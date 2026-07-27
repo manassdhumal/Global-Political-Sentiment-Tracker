@@ -89,7 +89,29 @@ Without credentials everything still runs on synthetic data.
 To make topic analysis prefer **live** data (GDELT media + social opinion, with
 per-piece synthetic fallback), set `GPST_TOPIC_SOURCE=auto` — or pass
 `?source=auto` to `/api/topic`. Each topic page shows its actual data source
-(`media: gdelt/synthetic`, `social: reddit+bluesky/synthetic`).
+(`media: gdelt-bq/gdelt-doc/synthetic`, `social: reddit+bluesky/synthetic`).
+
+**Real history via BigQuery (no rate limits).** For genuine multi-year data,
+enable GDELT's public GKG table on BigQuery:
+
+```bash
+pip install google-cloud-bigquery
+# authenticate (ADC or a service account), then:
+export GPST_BQ_PROJECT=your-gcp-project      # GPST_BQ_MAX_GB caps query cost
+```
+
+With `source=auto`, media falls back BigQuery → DOC API → synthetic. Queries are
+cost-guarded (partitioned table, date filter, `maximum_bytes_billed`).
+
+**Live trending (precompute).** Ranking the whole catalog from live data is too
+many queries per request, so a job precomputes it into a cache the API serves:
+
+```bash
+python scripts/precompute_trending.py --source auto   # run hourly via cron / Task Scheduler
+```
+
+`/api/trending` serves the cached snapshot when fresh, else computes synthetically
+on the fly.
 
 ## Topics
 

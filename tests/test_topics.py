@@ -58,3 +58,27 @@ def test_trending_and_snapshot():
     snap = global_snapshot()
     assert "global_tone" in snap and snap["n_topics"] > 0
     assert "top_rising" in snap and "top_falling" in snap
+
+
+def test_bigquery_guarded_fallback():
+    from datetime import date
+    from src.topics import bigquery
+    # No BigQuery project/creds in tests -> must degrade to None, never raise.
+    assert bigquery.bq_media_weekly("inflation", date(2025, 1, 1), date(2026, 1, 1)) is None
+
+
+def test_trending_cache_roundtrip(tmp_path, monkeypatch):
+    from src.topics import cache
+    monkeypatch.setattr(cache, "_CACHE_PATH", tmp_path / "trending_cache.json")
+    cache.write_trending({"snapshot": {"global_tone": 1.0}, "trending": [{"id": "x"}], "source": "synthetic"})
+    c = cache.read_trending(max_age_hours=24)
+    assert c and c["source"] == "synthetic" and c["trending"][0]["id"] == "x"
+    assert "computed_at" in c
+    assert cache.read_trending(max_age_hours=0) is None   # age>0h -> stale
+
+
+def test_analyze_is_cached():
+    import time
+    analyze_topic("healthcare")                      # warm
+    t = time.time(); analyze_topic("healthcare"); dt = time.time() - t
+    assert dt < 0.05                                 # served from cache

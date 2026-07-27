@@ -34,6 +34,8 @@ fpdf2>=2.7             # PDF report export
 # OPTIONAL (auto-detected if installed; not required):
 #   transformers + torch  -> RoBERTa sentiment backend (set GPST_SENTIMENT_BACKEND=transformers)
 #   spacy + en_core_web_sm -> NER enrichment for untracked entities
+#   google-cloud-bigquery  -> real, rate-limit-free GDELT history for topic
+#                             analysis (set GPST_BQ_PROJECT + authenticate)
 
 # --- v2: API backend ---
 fastapi>=0.110         # JSON API for the React frontend

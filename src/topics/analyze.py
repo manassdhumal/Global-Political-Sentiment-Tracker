@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
 
 import pandas as pd
 
@@ -11,26 +12,31 @@ from ..ingestion.synthetic import _LANG
 from ..analytics import (weekly_weighted_series, country_tone_summary,
                          forecast_tone, detect_anomalies, biggest_spike_week,
                          extract_topics)
-from . import synth, live
+from . import synth, live, bigquery
 from .catalog import Topic, resolve_topic
 
-_LIVE_SOURCES = {"auto", "live", "gdelt"}
+_LIVE_SOURCES = {"auto", "live", "gdelt", "bigquery"}
 
 
 def _media_pack(query: str, start: date, end: date, source: str,
                 countries: list[str]) -> dict:
     """Media weekly series + geography + driver titles, from live or synthetic.
 
-    Geography (by_country/by_language) is always modelled — per-country live
-    pulls are too many GDELT calls for an on-demand request.
+    Order for live sources: GDELT BigQuery (real, long history) → GDELT DOC API
+    → synthetic. Geography (by_country/by_language) is always modelled — real
+    per-country pulls are too many calls for an on-demand request.
     """
     by_country = synth.by_country_weekly(query, end, countries)  # modelled geo
     if source in _LIVE_SOURCES:
+        bm = bigquery.bq_media_weekly(query, start, end) if source != "gdelt" else None
+        if bm is not None and not bm.empty:
+            return {"media": bm, "by_country": by_country, "titles": synth.titles(query),
+                    "source": "gdelt-bq", "geo_modelled": True}
         lm = live.live_media(query, start, end)
         if lm:
-            titles = lm["titles"] or synth.titles(query)
-            return {"media": lm["media"], "by_country": by_country, "titles": titles,
-                    "source": "gdelt", "geo_modelled": True}
+            return {"media": lm["media"], "by_country": by_country,
+                    "titles": lm["titles"] or synth.titles(query),
+                    "source": "gdelt-doc", "geo_modelled": True}
     return {"media": weekly_weighted_series(by_country), "by_country": by_country,
             "titles": synth.titles(query), "source": "synthetic", "geo_modelled": False}
 
@@ -54,9 +60,20 @@ def _recs(df: pd.DataFrame, cols: list[str]) -> list[dict]:
 
 def analyze_topic(query: str, *, end: date | None = None,
                   source: str | None = None) -> dict:
-    topic: Topic = resolve_topic(query)
+    """Cached entry point. Results are memoised per (query, source, ISO-week)."""
     end = end or datetime.now(timezone.utc).date()
     source = (source or os.getenv("GPST_TOPIC_SOURCE", "synthetic")).lower()
+    end_week = (end - timedelta(days=end.weekday())).isoformat()
+    return _analyze_cached(query.strip(), source, end_week)
+
+
+@lru_cache(maxsize=256)
+def _analyze_cached(query: str, source: str, end_week_iso: str) -> dict:
+    return _analyze_impl(query, date.fromisoformat(end_week_iso), source)
+
+
+def _analyze_impl(query: str, end: date, source: str) -> dict:
+    topic: Topic = resolve_topic(query)
     wl = load_watchlist()
     countries = wl.gdelt_country_codes
     meta = synth.topic_meta(topic.query, end)
