@@ -113,6 +113,13 @@ python scripts/precompute_trending.py --source auto   # run hourly via cron / Ta
 `/api/trending` serves the cached snapshot when fresh, else computes synthetically
 on the fly.
 
+## Deploy
+
+Ship the frontend to **Vercel** and the API as a **container** (Render/Railway/
+Fly). The repo includes a lean [`Dockerfile`](Dockerfile), [`render.yaml`](render.yaml),
+and a full step-by-step in **[DEPLOY.md](DEPLOY.md)**. CORS is env-configurable
+(`GPST_CORS_ORIGINS`); the frontend points at the API via `NEXT_PUBLIC_API_BASE`.
+
 ## Topics
 
 You don't need to register a topic to analyse it — **type anything** on the

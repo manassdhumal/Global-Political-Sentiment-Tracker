@@ -1,0 +1,17 @@
+frontend/
+tests/
+data/
+.git/
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.claude/
+.env
+*.db
+*.sqlite
+README.md
+DEPLOY.md
+src/dashboard/

@@ -1,0 +1,34 @@
+# Render blueprint for the FastAPI backend (https://render.com).
+# One-click: New → Blueprint → point at this repo. Then set GPST_CORS_ORIGINS
+# to your deployed frontend URL. Runs on synthetic data with no other config.
+services:
+  - type: web
+    name: gpst-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: GPST_CORS_ORIGINS
+        value: https://your-frontend.vercel.app   # <-- change to your Vercel URL
+      # Optional live data (leave unset to run on synthetic):
+      # - key: GPST_TOPIC_SOURCE            # 'auto' to prefer live GDELT/social
+      #   value: synthetic
+      # - key: GPST_BQ_PROJECT             # real GDELT history via BigQuery
+      #   sync: false
+      # - key: REDDIT_CLIENT_ID
+      #   sync: false
+      # - key: REDDIT_CLIENT_SECRET
+      #   sync: false
+      # - key: BLUESKY_HANDLE
+      #   sync: false
+      # - key: BLUESKY_APP_PASSWORD
+      #   sync: false
+
+# NOTE on trending precompute: Render's cron jobs and web services don't share a
+# filesystem, so the file cache (data/trending_cache.json) won't be visible
+# across them on the free tier. The API computes trending on the fly (synthetic)
+# when no cache is present — fine for the free tier. For live precomputed
+# trending, attach a persistent disk (paid) mounted at /app/data on both, or
+# swap the file cache for Redis.

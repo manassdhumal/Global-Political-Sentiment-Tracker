@@ -7,6 +7,7 @@ Interactive docs at http://localhost:8000/docs
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -30,14 +31,18 @@ app = FastAPI(
                 "social tone, NOT public opinion.",
 )
 
-# Allow the Next.js dev server (and common local ports) to call the API.
+# CORS: local dev origins by default; add the deployed frontend origin(s) via
+# GPST_CORS_ORIGINS (comma-separated). Use "*" to allow any origin.
+_DEFAULT_ORIGINS = [
+    "http://localhost:3000", "http://127.0.0.1:3000",
+    "http://localhost:3001", "http://127.0.0.1:3001",
+]
+_env_origins = [o.strip() for o in os.getenv("GPST_CORS_ORIGINS", "").split(",") if o.strip()]
+_allow_all = "*" in _env_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", "http://127.0.0.1:3000",
-        "http://localhost:3001", "http://127.0.0.1:3001",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"] if _allow_all else _DEFAULT_ORIGINS + _env_origins,
+    allow_credentials=not _allow_all,   # credentials can't be combined with "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )

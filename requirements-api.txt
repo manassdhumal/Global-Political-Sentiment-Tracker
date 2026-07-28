@@ -1,0 +1,32 @@
+# Lean dependencies for deploying the FastAPI backend (api/).
+# Excludes heavy/optional libs — torch/transformers, spaCy, Streamlit, Plotly —
+# so the image is small and fits free hosts. With these absent, RoBERTa
+# sentiment auto-falls-back to VADER; add torch+transformers on a larger
+# instance if you want the transformer model.
+
+fastapi>=0.110
+uvicorn[standard]>=0.29
+
+pandas>=2.0
+numpy>=1.24
+PyYAML>=6.0
+requests>=2.31
+httpx>=0.27
+python-dotenv>=1.0
+
+# analytics
+statsmodels>=0.14      # ARIMA forecasting
+scipy>=1.11            # anomaly detection, impact t-test
+scikit-learn>=1.3      # topic modeling (LDA)
+
+# text + reports
+vaderSentiment>=3.3    # sentiment fallback (offline)
+fpdf2>=2.7             # PDF report export
+
+# live opinion (small, pure-python; optional at runtime)
+praw>=7.7
+atproto>=0.0.55
+
+# OPTIONAL, add manually if wanted:
+#   google-cloud-bigquery  -> real GDELT history (set GPST_BQ_PROJECT)
+#   torch + transformers   -> RoBERTa sentiment (needs a larger instance)
