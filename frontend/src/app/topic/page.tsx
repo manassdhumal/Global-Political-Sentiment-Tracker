@@ -7,7 +7,7 @@ import * as echarts from "echarts";
 import { useApi } from "@/lib/useApi";
 import { EChart, useChartTheme } from "@/components/echart";
 import { lineTimeSeries, horizontalBar } from "@/components/charts";
-import { Card, PageHeader, StatTile, Spinner, EmptyState, Badge, DISCLAIMER } from "@/components/ui";
+import { Card, PageHeader, StatTile, Spinner, EmptyState, Badge, DetailSkeleton, DISCLAIMER } from "@/components/ui";
 import { fmtSigned, fmtNum, toneColor } from "@/lib/format";
 
 const NAME_FIX: Record<string, string> = { "South Korea": "Korea" };
@@ -59,7 +59,7 @@ function TopicInner() {
     return () => { alive = false; };
   }, []);
 
-  const { data, loading, error } = useApi<Analysis>(q ? "/api/topic" : null, { q });
+  const { data, loading, error, reload } = useApi<Analysis>(q ? "/api/topic" : null, { q });
 
   const mvOption = useMemo(() => {
     if (!data) return {};
@@ -126,8 +126,8 @@ function TopicInner() {
         </Card>
       )}
 
-      {q && loading && <Spinner label={`Analyzing “${q}”…`} />}
-      {q && error && <EmptyState title="Couldn't analyze that topic" hint={error} />}
+      {q && loading && <DetailSkeleton />}
+      {q && error && <EmptyState title="Couldn't analyze that topic" hint={error} onRetry={reload} />}
 
       {data && (
         <>

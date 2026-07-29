@@ -182,11 +182,52 @@ export function Spinner({ label }: { label?: string }) {
   );
 }
 
-export function EmptyState({ title, hint }: { title: string; hint?: string }) {
+export function EmptyState({ title, hint, onRetry }: { title: string; hint?: string; onRetry?: () => void }) {
   return (
     <div className="rounded-xl border border-dashed border-border p-8 text-center">
       <p className="text-sm font-medium">{title}</p>
       {hint && <p className="mt-1 text-sm text-muted">{hint}</p>}
+      {onRetry && (
+        <button onClick={onRetry} className="mt-3 rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:border-accent/50 hover:text-foreground">
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Pulsing placeholder block. */
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cx("animate-pulse rounded-lg bg-card2", className)} />;
+}
+
+/** A grid of card-shaped skeletons (matches TopicCard layout). */
+export function CardGridSkeleton({ n = 6 }: { n?: number }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: n }).map((_, i) => (
+        <Card key={i} className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-16" /></div>
+            <Skeleton className="h-6 w-12" />
+          </div>
+          <Skeleton className="mt-3 h-10 w-full" />
+          <Skeleton className="mt-2 h-3 w-24" />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/** A few stacked stat-tile + chart skeletons (matches a detail page). */
+export function DetailSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+      </div>
+      <Skeleton className="h-80 w-full" />
+      <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="h-64" /></div>
     </div>
   );
 }

@@ -82,3 +82,21 @@ def test_analyze_is_cached():
     analyze_topic("healthcare")                      # warm
     t = time.time(); analyze_topic("healthcare"); dt = time.time() - t
     assert dt < 0.05                                 # served from cache
+
+
+def test_alerts_and_compare_endpoints():
+    from fastapi.testclient import TestClient
+    from api.main import app
+    c = TestClient(app)
+
+    a = c.get("/api/alerts", params={"threshold": 1.5})
+    assert a.status_code == 200
+    body = a.json()
+    assert body["threshold"] == 1.5 and "alerts" in body
+    assert all(abs(r["movement"]) >= 1.5 for r in body["alerts"])
+
+    cmp = c.get("/api/compare-topics", params={"topics": "inflation,nato"})
+    assert cmp.status_code == 200
+    tops = cmp.json()["topics"]
+    assert len(tops) == 2
+    assert tops[0]["media_series"] and "avg_gap" in tops[0]

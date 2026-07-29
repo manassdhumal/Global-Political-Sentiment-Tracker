@@ -40,6 +40,32 @@ def get_topics() -> dict:
     }
 
 
+@router.get("/alerts")
+def get_alerts(threshold: float = Query(2.0, ge=0.0, le=50.0)) -> dict:
+    """Topics whose week-over-week sentiment moved beyond `threshold`."""
+    rows = catalog_stats()
+    hits = [r for r in rows if abs(r["movement"]) >= threshold]
+    hits.sort(key=lambda r: abs(r["movement"]), reverse=True)
+    return {"threshold": threshold, "count": len(hits), "alerts": hits}
+
+
+@router.get("/compare-topics")
+def compare_topics(topics: str = Query(..., description="comma-separated slugs/queries")) -> dict:
+    """Overlay media + public sentiment series for up to 5 topics."""
+    ids = [t.strip() for t in topics.split(",") if t.strip()][:5]
+    if not ids:
+        raise HTTPException(400, "Provide at least one topic.")
+    out = []
+    for q in ids:
+        a = analyze_topic(q)
+        out.append({
+            "id": a["topic"]["id"], "label": a["topic"]["label"],
+            "media_series": a["media_series"], "opinion_series": a["opinion_series"],
+            "avg_media": a["avg_media"], "avg_public": a["avg_public"], "avg_gap": a["avg_gap"],
+        })
+    return {"topics": out}
+
+
 @router.get("/topic")
 def get_topic(q: str = Query(..., min_length=1, max_length=120),
               source: str | None = Query(None, pattern="^(auto|live|gdelt|synthetic)$")) -> dict:

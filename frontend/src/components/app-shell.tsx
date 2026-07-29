@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TrendingUp, LayoutGrid, Search, BookOpen, Menu, X } from "lucide-react";
+import { TrendingUp, LayoutGrid, Search, GitCompareArrows, BookOpen, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useConfig } from "./config-context";
 import { cx, Badge } from "./ui";
@@ -14,6 +14,7 @@ const NAV: { section: string; items: Item[] }[] = [
     { href: "/", label: "Trending", icon: TrendingUp },
     { href: "/topics", label: "Browse topics", icon: LayoutGrid },
     { href: "/topic", label: "Analyze a topic", icon: Search },
+    { href: "/compare", label: "Compare topics", icon: GitCompareArrows },
     { href: "/methodology", label: "Methodology", icon: BookOpen },
   ]},
 ];

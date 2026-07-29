@@ -10,7 +10,8 @@ export function useApi<T>(
   const [data, setData] = useState<T | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [loading, setLoading] = useState<boolean>(!!path);
-  const key = path ? path + JSON.stringify(params ?? {}) : null;
+  const [tick, setTick] = useState(0);
+  const key = path ? path + JSON.stringify(params ?? {}) + tick : null;
 
   useEffect(() => {
     if (!path) { setLoading(false); return; }
@@ -23,5 +24,6 @@ export function useApi<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  return { data, error, loading };
+  const reload = () => setTick((t) => t + 1);
+  return { data, error, loading, reload };
 }

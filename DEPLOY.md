@@ -46,6 +46,7 @@ Back on Render, set **`GPST_CORS_ORIGINS`** to your Vercel URL
 | API | `GPST_CORS_ORIGINS` | Comma-separated allowed frontend origins (`*` allows all) |
 | API | `GPST_TOPIC_SOURCE` | `synthetic` (default) or `auto` to prefer live data |
 | API | `GPST_BQ_PROJECT` | GCP project for real GDELT history via BigQuery (+ auth) |
+| API | `GPST_REDIS_URL` | Redis URL for a shared trending cache across web + cron |
 | API | `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` | live Reddit opinion |
 | API | `BLUESKY_HANDLE` / `BLUESKY_APP_PASSWORD` | live Bluesky opinion |
 | Frontend | `NEXT_PUBLIC_API_BASE` | URL of the deployed API |
@@ -54,9 +55,10 @@ Back on Render, set **`GPST_CORS_ORIGINS`** to your Vercel URL
 
 - **Free tiers sleep.** Render's free web service cold-starts after idle; the
   first request may take ~30s.
-- **Trending precompute cache.** `scripts/precompute_trending.py` writes a file
+- **Trending precompute cache.** `scripts/precompute_trending.py` writes a
   cache the API serves. On hosts where cron and web don't share a filesystem
-  (Render free tier), the API just computes trending on the fly instead. For
-  live precomputed trending at scale, use a persistent disk or Redis.
+  (Render free tier), set **`GPST_REDIS_URL`** on both so they share the cache
+  via Redis (e.g. Render's free Key Value / Upstash). Without it, the API just
+  computes trending on the fly.
 - **Other hosts.** The same `Dockerfile` works on Railway, Fly.io, Google Cloud
   Run, etc. — just set the env vars and expose `$PORT`.

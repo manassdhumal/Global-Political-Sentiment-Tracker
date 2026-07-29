@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useApi } from "@/lib/useApi";
 import { TopicCard, TopicStat } from "@/components/topic-card";
-import { PageHeader, Spinner, EmptyState, Segmented, Badge, DISCLAIMER, cx } from "@/components/ui";
+import { PageHeader, EmptyState, CardGridSkeleton, DISCLAIMER, cx } from "@/components/ui";
 
 interface TopicsResp { categories: string[]; count: number; topics: (TopicStat & { category: string })[]; }
 
 export default function BrowsePage() {
-  const { data, loading, error } = useApi<TopicsResp>("/api/topics");
+  const { data, loading, error, reload } = useApi<TopicsResp>("/api/topics");
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
 
@@ -44,8 +44,8 @@ export default function BrowsePage() {
         </div>
       </div>
 
-      {loading && <Spinner />}
-      {error && <EmptyState title="Couldn't load catalog" hint={error} />}
+      {loading && <CardGridSkeleton n={9} />}
+      {error && <EmptyState title="Couldn't load catalog" hint={error} onRetry={reload} />}
 
       {data && (
         <>

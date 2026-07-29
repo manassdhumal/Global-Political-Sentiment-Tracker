@@ -27,6 +27,9 @@ fpdf2>=2.7             # PDF report export
 praw>=7.7
 atproto>=0.0.55
 
+# shared trending cache across containers (optional; used if GPST_REDIS_URL set)
+redis>=5.0
+
 # OPTIONAL, add manually if wanted:
 #   google-cloud-bigquery  -> real GDELT history (set GPST_BQ_PROJECT)
 #   torch + transformers   -> RoBERTa sentiment (needs a larger instance)
