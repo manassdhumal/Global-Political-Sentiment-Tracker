@@ -21,9 +21,14 @@ sentiment comes from Reddit + Bluesky posts scored by a local RoBERTa model.
    geopolitics), searchable and filterable by category.
 3. **Analyze a topic** — the system is **open-ended**: type *any* topic (a person,
    party, issue, or free-text phrase) and get its full analysis on one page —
-   **media vs public** sentiment over its **entire history** (since the topic first
-   appeared), forecast + anomalies, what's driving it (topic modeling), and
-   coverage by country and language.
+   a generated plain-English **"what this means" explanation**, then **media vs
+   public** sentiment over its **entire history** (since the topic first appeared),
+   forecast + anomalies, what's driving it (topic modeling), and coverage by
+   country and language.
+
+The explanation is composed from the numbers by a deterministic, offline
+generator; set `GPST_NARRATIVE=anthropic` (+ `ANTHROPIC_API_KEY`) for an
+LLM-written version.
 
 Each topic's timeline runs from its own **inception**, so histories span years and
 vary in length by topic. Every insight is on one page — no navigation maze.

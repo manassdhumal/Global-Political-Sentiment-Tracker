@@ -28,6 +28,7 @@ interface Analysis {
   by_language: { language: string; avg_tone: number; volume: number }[];
   stats: { total_articles: number; total_posts: number; max_diversity: number; low_conf_weeks: number; n_weeks: number;
     source_media: string; source_opinion: string; geo_modelled: boolean };
+  narrative: { backend: string; headline: string; summary: string; points: string[] };
 }
 
 function SearchBar({ initial }: { initial: string }) {
@@ -142,6 +143,25 @@ function TopicInner() {
             <Badge>social: {data.stats.source_opinion}</Badge>
             {data.stats.source_media === "synthetic" && <span>· synthetic fallback (live needs GDELT/keys)</span>}
           </div>
+
+          <Card className="border-accent/30 bg-accent/[0.04] p-5">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-accent">Analysis</span>
+              <Badge>{data.narrative.backend === "anthropic" ? "AI" : "auto"}</Badge>
+            </div>
+            <p className="text-base font-medium">{data.narrative.headline}</p>
+            <p className="mt-2 text-sm text-muted">{data.narrative.summary}</p>
+            {data.narrative.points.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {data.narrative.points.map((p, i) => (
+                  <li key={i} className="flex gap-2 text-sm">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <StatTile label="Avg media tone" value={fmtSigned(data.avg_media)} accent={t.accent} />

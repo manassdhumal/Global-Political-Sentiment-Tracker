@@ -47,6 +47,7 @@ Back on Render, set **`GPST_CORS_ORIGINS`** to your Vercel URL
 | API | `GPST_TOPIC_SOURCE` | `synthetic` (default) or `auto` to prefer live data |
 | API | `GPST_BQ_PROJECT` | GCP project for real GDELT history via BigQuery (+ auth) |
 | API | `GPST_REDIS_URL` | Redis URL for a shared trending cache across web + cron |
+| API | `GPST_NARRATIVE` / `ANTHROPIC_API_KEY` | `anthropic` for LLM-written topic explanations (default: offline rule-based) |
 | API | `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` | live Reddit opinion |
 | API | `BLUESKY_HANDLE` / `BLUESKY_APP_PASSWORD` | live Bluesky opinion |
 | Frontend | `NEXT_PUBLIC_API_BASE` | URL of the deployed API |

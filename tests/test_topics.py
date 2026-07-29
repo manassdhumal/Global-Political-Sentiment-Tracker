@@ -84,6 +84,23 @@ def test_analyze_is_cached():
     assert dt < 0.05                                 # served from cache
 
 
+def test_narrative_generated_in_bundle():
+    a = analyze_topic("inflation")
+    n = a["narrative"]
+    assert n["backend"] == "rules"                   # rule-based default
+    assert n["headline"] and n["summary"]
+    assert len(n["points"]) >= 3
+    # honest framing (media/social sentiment, not opinion)
+    assert "tone" in n["summary"].lower() or "sentiment" in n["summary"].lower()
+
+
+def test_narrative_handles_empty():
+    from src.topics.narrative import generate_narrative
+    out = generate_narrative({"topic": {"label": "Nothing"}, "media_series": []})
+    assert "Not enough data" in out["headline"]
+    assert out["points"] == []
+
+
 def test_alerts_and_compare_endpoints():
     from fastapi.testclient import TestClient
     from api.main import app

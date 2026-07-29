@@ -33,3 +33,5 @@ redis>=5.0
 # OPTIONAL, add manually if wanted:
 #   google-cloud-bigquery  -> real GDELT history (set GPST_BQ_PROJECT)
 #   torch + transformers   -> RoBERTa sentiment (needs a larger instance)
+#   anthropic              -> LLM-written topic narratives (GPST_NARRATIVE=anthropic
+#                             + ANTHROPIC_API_KEY); default is rule-based/offline

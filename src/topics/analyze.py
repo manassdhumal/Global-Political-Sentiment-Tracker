@@ -13,6 +13,7 @@ from ..analytics import (weekly_weighted_series, country_tone_summary,
                          forecast_tone, detect_anomalies, biggest_spike_week,
                          extract_topics)
 from . import synth, live, bigquery
+from .narrative import generate_narrative
 from .catalog import Topic, resolve_topic
 
 _LIVE_SOURCES = {"auto", "live", "gdelt", "bigquery"}
@@ -125,7 +126,7 @@ def _analyze_impl(query: str, end: date, source: str) -> dict:
                               "avg_tone": round(float((t * v).sum() / tot), 3) if tot else 0.0})
     lang_df = pd.DataFrame(lang_rows).sort_values("volume", ascending=False) if lang_rows else pd.DataFrame()
 
-    return {
+    result = {
         "topic": {"id": topic.id, "label": topic.label, "query": topic.query,
                   "category": topic.category, "custom": topic.custom},
         "inception": meta["inception"].strftime("%Y-%m-%d"),
@@ -159,3 +160,5 @@ def _analyze_impl(query: str, end: date, source: str) -> dict:
             "geo_modelled": mp["geo_modelled"],
         },
     }
+    result["narrative"] = generate_narrative(result)
+    return result
