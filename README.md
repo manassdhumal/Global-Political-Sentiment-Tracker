@@ -1,5 +1,7 @@
 # 🌍 Global Political Sentiment Tracker
 
+[![CI](https://github.com/manassdhumal/Global-Political-Sentiment-Tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/manassdhumal/Global-Political-Sentiment-Tracker/actions/workflows/ci.yml)
+
 Tracks how the world's **news media** and **social platforms** feel about
 political figures, parties, and issues — across countries and over time.
 Media tone comes from [GDELT](https://www.gdeltproject.org/); public/social
