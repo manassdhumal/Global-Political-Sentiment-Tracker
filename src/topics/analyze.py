@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import pandas as pd
 
-from ..config import load_watchlist
+from ..config import load_watchlist, load_events
 from ..ingestion.synthetic import _LANG
 from ..analytics import (weekly_weighted_series, country_tone_summary,
                          forecast_tone, detect_anomalies, biggest_spike_week,
@@ -48,6 +48,26 @@ def _opinion_pack(query: str, start: date, end: date, source: str) -> dict:
         if lo is not None and not lo.empty:
             return {"opinion": lo, "source": "reddit+bluesky"}
     return {"opinion": synth.opinion_weekly(query, end), "source": "synthetic"}
+
+
+def _topic_events(topic: Topic, media: pd.DataFrame) -> list[dict]:
+    """Known events (global + this-topic) that fall within the topic's window."""
+    if media.empty:
+        return []
+    w0, w1 = media["week_start"].min(), media["week_start"].max()
+    out = []
+    for e in load_events():
+        matches = e.scope_type == "global" or (
+            e.scope_type in ("topic", "entity") and e.scope_id == topic.id)
+        if not matches:
+            continue
+        try:
+            d = pd.to_datetime(e.date)
+        except Exception:
+            continue
+        if w0 <= d <= w1:
+            out.append({"date": e.date, "label": e.label, "scope": e.scope_type})
+    return sorted(out, key=lambda x: x["date"])
 
 
 def _recs(df: pd.DataFrame, cols: list[str]) -> list[dict]:
@@ -150,6 +170,7 @@ def _analyze_impl(query: str, end: date, source: str) -> dict:
         "by_country": _recs(csum, ["country", "country_name", "iso3", "avg_tone",
                                    "article_volume", "source_diversity", "low_conf_weeks", "n_weeks"]),
         "by_language": _recs(lang_df, ["language", "avg_tone", "volume"]),
+        "events": _topic_events(topic, media),
         "stats": {
             "total_articles": int(by_country["article_volume"].sum()) if not by_country.empty else 0,
             "total_posts": int(opinion[opinion["source"] != "all"]["post_volume"].sum()) if not opinion.empty else 0,

@@ -94,6 +94,19 @@ def test_narrative_generated_in_bundle():
     assert "tone" in n["summary"].lower() or "sentiment" in n["summary"].lower()
 
 
+def test_events_in_bundle():
+    a = analyze_topic("climate policy")
+    ev = a["events"]
+    assert isinstance(ev, list) and len(ev) > 0
+    w0, w1 = a["window"]["start"], a["window"]["end"]
+    for e in ev:
+        assert "date" in e and "label" in e
+        assert w0 <= e["date"] <= w1                 # within the topic window
+    # a custom (uncatalogued) topic still gets global events
+    custom = analyze_topic("teleportation policy")
+    assert all(e["scope"] == "global" for e in custom["events"])
+
+
 def test_narrative_handles_empty():
     from src.topics.narrative import generate_narrative
     out = generate_narrative({"topic": {"label": "Nothing"}, "media_series": []})

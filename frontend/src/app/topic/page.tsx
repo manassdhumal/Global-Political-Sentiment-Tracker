@@ -26,6 +26,7 @@ interface Analysis {
   drivers: { spike_week: string | null; topics: { words: string[]; weight: number }[] };
   by_country: CRow[];
   by_language: { language: string; avg_tone: number; volume: number }[];
+  events: { date: string; label: string; scope: string }[];
   stats: { total_articles: number; total_posts: number; max_diversity: number; low_conf_weeks: number; n_weeks: number;
     source_media: string; source_opinion: string; geo_modelled: boolean };
   narrative: { backend: string; headline: string; summary: string; points: string[] };
@@ -67,7 +68,7 @@ function TopicInner() {
     return lineTimeSeries(t, [
       { name: "Media (coverage tone)", points: data.media_vs_public.map((r) => ({ week_start: r.week_start, value: r.media_tone })), color: t.accent },
       { name: "Public (social sentiment)", points: data.media_vs_public.map((r) => ({ week_start: r.week_start, value: r.public_sentiment })), color: t.accent2 },
-    ], { yName: "sentiment", showZero: true });
+    ], { yName: "sentiment", showZero: true, markLines: data.events.map((e) => ({ x: e.date, label: e.label })) });
   }, [data, t]);
 
   const fcOption = useMemo<EChartsCoreOption>(() => {
@@ -174,6 +175,12 @@ function TopicInner() {
           <Card className="p-4">
             <div className="mb-2 text-sm font-medium">Media vs public sentiment — full history</div>
             <EChart height={380} option={mvOption} />
+            {data.events.length > 0 && (
+              <div className="mt-2 text-xs text-muted">
+                Dashed lines mark {data.events.length} known event{data.events.length !== 1 ? "s" : ""} in this window
+                {data.stats.source_media === "synthetic" && " (illustrative — they won't align with synthetic spikes)"}.
+              </div>
+            )}
           </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">

@@ -1,21 +1,32 @@
 # Event annotation layer — known events rendered as markers on timeline charts.
 # Columns:
 #   date        : YYYY-MM-DD
-#   scope_type  : entity | country | global
-#   scope_id    : entity id (from watchlist) OR GDELT country code OR blank for global
+#   scope_type  : global | topic | country
+#   scope_id    : topic id (from config/topics.yaml) OR country code OR blank for global
 #   label       : short text shown on the marker
 #
 # NOTE: with the SYNTHETIC demo dataset these example events will NOT line up
-# with the (randomly injected) synthetic tone shocks — they demonstrate the
+# with the (randomly generated) synthetic tone spikes — they demonstrate the
 # annotation MECHANISM. Against live GDELT data these should be real events.
 # Lines starting with '#' are ignored.
 date,scope_type,scope_id,label
-2026-04-20,global,,Example: G20 leaders summit
-2026-05-05,country,US,Example: US policy address
-2026-05-15,entity,joe_biden,Example: major speech
-2026-05-22,entity,donald_trump,Example: campaign rally
-2026-06-01,entity,narendra_modi,Example: state visit
-2026-06-10,country,FR,Example: national debate
-2026-06-18,entity,inflation,Example: central bank rate decision
-2026-07-01,global,,Example: international climate talks
-2026-07-08,entity,volodymyr_zelensky,Example: security conference
+2024-06-01,global,,Example: major elections season
+2024-11-05,global,,Example: US election
+2025-01-20,global,,Example: US inauguration
+2025-07-01,global,,Example: G20 leaders summit
+2026-01-15,global,,Example: World Economic Forum
+2026-05-01,global,,Example: international climate talks
+2024-09-10,topic,inflation,Example: central-bank rate decision
+2025-03-12,topic,inflation,Example: inflation data release
+2025-09-18,topic,inflation,Example: rate cut
+2024-12-01,topic,climate,Example: COP summit
+2025-11-10,topic,climate,Example: emissions report
+2025-02-24,topic,ukraine_war,Example: anniversary coverage
+2025-06-15,topic,ukraine_war,Example: peace talks
+2024-10-01,topic,immigration,Example: border policy announcement
+2025-08-20,topic,immigration,Example: asylum ruling
+2025-05-05,topic,ai_regulation,Example: AI act milestone
+2026-02-10,topic,ai_regulation,Example: AI safety summit
+2025-04-14,topic,us_china,Example: trade talks
+2025-10-02,topic,elections,Example: major national vote
+2026-03-01,topic,energy_prices,Example: energy price cap change
