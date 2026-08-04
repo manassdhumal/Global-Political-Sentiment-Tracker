@@ -50,6 +50,20 @@ def _opinion_pack(query: str, start: date, end: date, source: str) -> dict:
     return {"opinion": synth.opinion_weekly(query, end), "source": "synthetic"}
 
 
+def _attention_pack(query: str, start: date, end: date, source: str) -> dict:
+    """Wikipedia pageviews attention series (live or synthetic fallback)."""
+    if source in _LIVE_SOURCES:
+        la = live.live_attention(query, start, end)
+        if la is not None and not la.empty:
+            return {"attention": la, "source": "wikipedia-live"}
+    return {"attention": synth.attention_weekly(query, end), "source": "synthetic"}
+
+
+def _news_pack(query: str) -> list[dict]:
+    """Fetch live real-time breaking news headlines with sentiment."""
+    return live.live_news(query, limit=15)
+
+
 def _topic_events(topic: Topic, media: pd.DataFrame) -> list[dict]:
     """Known events (global + this-topic) that fall within the topic's window."""
     if media.empty:
@@ -101,9 +115,12 @@ def _analyze_impl(query: str, end: date, source: str) -> dict:
 
     mp = _media_pack(topic.query, meta["inception"], end, source, countries)
     op = _opinion_pack(topic.query, meta["inception"], end, source)
+    ap = _attention_pack(topic.query, meta["inception"], end, source)
+    live_articles = _news_pack(topic.label)
     by_country = mp["by_country"]
     titles = mp["titles"]
     opinion = op["opinion"]
+    attention = ap["attention"]
 
     # --- media global series (live or synthetic) ---
     media = mp["media"]  # week_start, avg_tone, article_volume, low_confidence
@@ -155,7 +172,9 @@ def _analyze_impl(query: str, end: date, source: str) -> dict:
                    "end": media["week_start"].max().strftime("%Y-%m-%d") if not media.empty else None},
         "media_series": _recs(media, ["week_start", "avg_tone", "article_volume"]),
         "opinion_series": _recs(opin_all, ["week_start", "avg_sentiment", "post_volume"]) if not opin_all.empty else [],
+        "attention_series": _recs(attention, ["week_start", "pageviews", "daily_avg"]) if not attention.empty else [],
         "media_vs_public": _recs(mvp, ["week_start", "media_tone", "public_sentiment", "gap"]) if not mvp.empty else [],
+        "live_articles": live_articles,
         "avg_media": round(float(both["media_tone"].mean()), 2) if not both.empty else None,
         "avg_public": round(float(both["public_sentiment"].mean()), 2) if not both.empty else None,
         "avg_gap": round(float(both["gap"].mean()), 2) if not both.empty else None,
@@ -174,10 +193,14 @@ def _analyze_impl(query: str, end: date, source: str) -> dict:
         "stats": {
             "total_articles": int(by_country["article_volume"].sum()) if not by_country.empty else 0,
             "total_posts": int(opinion[opinion["source"] != "all"]["post_volume"].sum()) if not opinion.empty else 0,
+            "total_pageviews": int(attention["pageviews"].sum()) if not attention.empty else 0,
             "max_diversity": int(by_country["source_diversity"].max()) if not by_country.empty else 0,
             "low_conf_weeks": int(media["low_confidence"].sum()) if "low_confidence" in media and not media.empty else 0,
             "n_weeks": int(media["week_start"].nunique()) if not media.empty else 0,
-            "source_media": mp["source"], "source_opinion": op["source"],
+            "source_media": mp["source"],
+            "source_opinion": op["source"],
+            "source_attention": ap["source"],
+            "source_news": "global_rss" if live_articles else "none",
             "geo_modelled": mp["geo_modelled"],
         },
     }

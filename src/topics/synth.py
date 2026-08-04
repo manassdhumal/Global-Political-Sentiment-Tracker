@@ -164,3 +164,25 @@ def titles(query: str, near_shock: bool = True, n: int = 40) -> list[str]:
         rng.shuffle(words)
         out.append(" ".join(words))
     return out
+
+
+def attention_weekly(query: str, end: date) -> pd.DataFrame:
+    """Synthetic Wikipedia attention series fallback."""
+    meta = topic_meta(query, end)
+    weeks = _weeks(meta, end)
+    n = len(weeks)
+    rng = _rng("attention", query)
+    base_views = int(rng.uniform(5000, 50000))
+    views = np.maximum(500, (base_views * _ramp(n) * rng.uniform(0.7, 1.6, n)).astype(int))
+    rows = [
+        {
+            "week_start": weeks[i],
+            "pageviews": int(views[i]),
+            "daily_avg": round(float(views[i] / 7.0), 1),
+        }
+        for i in range(n)
+    ]
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["week_start"] = pd.to_datetime(df["week_start"])
+    return df

@@ -40,3 +40,14 @@ def get_events() -> list[dict]:
          "scope_id": e.scope_id, "label": e.label}
         for e in deps.get_events()
     ]
+
+
+@router.get("/sources/status")
+def get_sources_status() -> dict:
+    """Return runtime configuration and reachability status for all data streams."""
+    from src import settings
+    return {
+        "topic_source_setting": settings.topic_source(),
+        "sentiment_backend": settings.sentiment_backend(),
+        "sources": settings.all_source_status(),
+    }

@@ -56,11 +56,79 @@ def bluesky_creds() -> BlueskyCreds:
     )
 
 
+def bq_project() -> str | None:
+    return os.getenv("GPST_BQ_PROJECT") or None
+
+
+def topic_source() -> str:
+    return os.getenv("GPST_TOPIC_SOURCE", "auto").lower()
+
+
 def sentiment_backend() -> str:
     return os.getenv("GPST_SENTIMENT_BACKEND", "vader").lower()
 
 
 def which_opinion_sources() -> dict[str, bool]:
-    """Which live sources have credentials configured."""
+    """Which live social sources have credentials configured."""
     return {"reddit": reddit_creds().available,
             "bluesky": bluesky_creds().available}
+
+
+def all_source_status() -> dict[str, dict]:
+    """Summary of all configured and keyless live sources."""
+    bq = bq_project()
+    red = reddit_creds()
+    bsky = bluesky_creds()
+    anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
+
+    return {
+        "wikipedia": {
+            "name": "Wikipedia Pageviews",
+            "type": "public_attention",
+            "status": "ready",
+            "keyless": True,
+            "description": "Public attention index (Wikimedia REST API)",
+        },
+        "rss": {
+            "name": "Global News Wires (RSS)",
+            "type": "media_headlines",
+            "status": "ready",
+            "keyless": True,
+            "description": "Real-time coverage from BBC, Al Jazeera, DW, Guardian, France24",
+        },
+        "gdelt_doc": {
+            "name": "GDELT DOC 2.0 API",
+            "type": "media_tone",
+            "status": "ready",
+            "keyless": True,
+            "description": "Global news tone & volume timeline",
+        },
+        "gdelt_bigquery": {
+            "name": "GDELT BigQuery",
+            "type": "media_tone_archive",
+            "status": "configured" if bq else "unconfigured",
+            "keyless": False,
+            "description": f"GCP BigQuery project: {bq or 'not set'}",
+        },
+        "reddit": {
+            "name": "Reddit API",
+            "type": "social_opinion",
+            "status": "configured" if red.available else "unconfigured",
+            "keyless": False,
+            "description": "PRAW client ID / secret",
+        },
+        "bluesky": {
+            "name": "Bluesky API",
+            "type": "social_opinion",
+            "status": "configured" if bsky.available else "unconfigured",
+            "keyless": False,
+            "description": f"AT Protocol handle: {bsky.handle or 'not set'}",
+        },
+        "narrative_llm": {
+            "name": "Anthropic Claude",
+            "type": "ai_narrative",
+            "status": "configured" if anthropic else "auto_rules",
+            "keyless": False,
+            "description": "AI narrative generator (uses auto rules if unset)",
+        },
+    }

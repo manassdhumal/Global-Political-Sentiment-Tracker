@@ -18,6 +18,7 @@ import requests
 
 from ..ingestion import gdelt_client as gd
 from ..ingestion import reddit_client, bluesky_client
+from ..ingestion import wikipedia_client, rss_client
 from ..ingestion.reddit_client import OpinionError
 from ..processing.aggregate import aggregate_opinion_weekly
 from ..settings import which_opinion_sources
@@ -110,3 +111,36 @@ def live_opinion(query: str, start: date, end: date,
     } for p, sc in zip(posts, scores)]).drop_duplicates(subset=["id"])
     agg = aggregate_opinion_weekly(df)
     return agg if not agg.empty else None
+
+
+def live_attention(query: str, start: date, end: date) -> pd.DataFrame | None:
+    """Fetch real-world Wikipedia pageview attention timeline for the topic."""
+    try:
+        df = wikipedia_client.weekly_pageviews_series(query, start, end)
+        return df if not df.empty else None
+    except Exception as exc:
+        log.info("live_attention failed for %r: %s", query, exc)
+        return None
+
+
+def live_news(query: str, limit: int = 15) -> list[dict]:
+    """Fetch real-time breaking news items with on-the-fly sentiment scores."""
+    try:
+        articles = rss_client.fetch_live_news(query, max_articles=limit)
+        return [
+            {
+                "title": a.title,
+                "link": a.link,
+                "published": a.published,
+                "published_date": a.published_date,
+                "outlet": a.outlet,
+                "country": a.country,
+                "summary": a.summary,
+                "sentiment": a.sentiment,
+                "label": a.label,
+            }
+            for a in articles
+        ]
+    except Exception as exc:
+        log.info("live_news failed for %r: %s", query, exc)
+        return []
