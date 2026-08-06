@@ -28,19 +28,19 @@ class TestE2ELiveConnectors:
         assert resp.status_code == 200
         data = resp.json()
         assert "sources" in data
-        assert "mode" in data
-        assert "active_source_count" in data
+        assert "topic_source_setting" in data
+        assert "sentiment_backend" in data
 
         sources = data["sources"]
         assert "wikipedia" in sources
-        assert "rss_news" in sources
-        assert "gdelt" in sources
+        assert "rss" in sources
+        assert "gdelt_doc" in sources
         assert "bluesky" in sources
         assert "reddit" in sources
 
-        # Wikipedia and RSS news should be active and working
-        assert sources["wikipedia"]["status"] == "active"
-        assert sources["rss_news"]["status"] == "active"
+        # Wikipedia and RSS news should be ready (keyless)
+        assert sources["wikipedia"]["status"] == "ready"
+        assert sources["rss"]["status"] == "ready"
 
 
 class TestE2ETopicAnalysisPipeline:
