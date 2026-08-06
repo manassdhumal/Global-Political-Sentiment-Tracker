@@ -1,102 +1,158 @@
 # =====================================================================
-# Topic catalog (v3) — the browsable universe + trending candidate pool.
-# The system is OPEN-ENDED: any free-text topic can be analysed on demand
-# (see the "Analyze a topic" page). This catalog is just the curated set
-# shown in Browse and ranked for Trending — not a hard limit.
-#
-# category: figure | party | issue | institution | geopolitics
-# query   : search string used against GDELT / social (plain text, not
-#           GDELT operator syntax — the analyzer builds the query).
-# Still measures MEDIA + SOCIAL sentiment, never public opinion.
+# Topic catalog (v4) — Comprehensive Worldwide Political & Geopolitical Universe
+# Measures MEDIA + SOCIAL coverage tone, NOT public opinion.
+# Open-ended: any unlisted topic can also be analyzed on demand.
 # =====================================================================
-categories: [figure, party, issue, institution, geopolitics]
+categories: [geopolitics, figure, party, issue, macro_tech, institution]
 
 topics:
-  # --- Figures -------------------------------------------------------
-  - {id: joe_biden,        label: Joe Biden,             query: "Joe Biden",              category: figure}
-  - {id: donald_trump,     label: Donald Trump,          query: "Donald Trump",           category: figure}
-  - {id: kamala_harris,    label: Kamala Harris,         query: "Kamala Harris",          category: figure}
-  - {id: keir_starmer,     label: Keir Starmer,          query: "Keir Starmer",           category: figure}
-  - {id: rishi_sunak,      label: Rishi Sunak,           query: "Rishi Sunak",            category: figure}
-  - {id: justin_trudeau,   label: Justin Trudeau,        query: "Justin Trudeau",         category: figure}
-  - {id: emmanuel_macron,  label: Emmanuel Macron,       query: "Emmanuel Macron",        category: figure}
-  - {id: olaf_scholz,      label: Olaf Scholz,           query: "Olaf Scholz",            category: figure}
-  - {id: friedrich_merz,   label: Friedrich Merz,        query: "Friedrich Merz",         category: figure}
-  - {id: giorgia_meloni,   label: Giorgia Meloni,        query: "Giorgia Meloni",         category: figure}
-  - {id: pedro_sanchez,    label: Pedro Sánchez,         query: "Pedro Sanchez",          category: figure}
-  - {id: ursula_vdl,       label: Ursula von der Leyen,  query: "von der Leyen",          category: figure}
-  - {id: vladimir_putin,   label: Vladimir Putin,        query: "Vladimir Putin",         category: figure}
-  - {id: volodymyr_zelensky, label: Volodymyr Zelensky,  query: "Zelensky",               category: figure}
-  - {id: narendra_modi,    label: Narendra Modi,         query: "Narendra Modi",          category: figure}
-  - {id: xi_jinping,       label: Xi Jinping,            query: "Xi Jinping",             category: figure}
-  - {id: kim_jong_un,      label: Kim Jong Un,           query: "Kim Jong Un",            category: figure}
-  - {id: fumio_kishida,    label: Fumio Kishida,         query: "Kishida",                category: figure}
-  - {id: anthony_albanese, label: Anthony Albanese,      query: "Anthony Albanese",       category: figure}
-  - {id: lula,             label: Lula da Silva,         query: "Lula",                   category: figure}
-  - {id: javier_milei,     label: Javier Milei,          query: "Javier Milei",           category: figure}
-  - {id: claudia_sheinbaum, label: Claudia Sheinbaum,    query: "Claudia Sheinbaum",      category: figure}
-  - {id: erdogan,          label: Recep Tayyip Erdoğan,  query: "Erdogan",                category: figure}
-  - {id: netanyahu,        label: Benjamin Netanyahu,    query: "Netanyahu",              category: figure}
-  - {id: mbs,              label: Mohammed bin Salman,    query: "Mohammed bin Salman",    category: figure}
-  - {id: ramaphosa,        label: Cyril Ramaphosa,       query: "Ramaphosa",              category: figure}
+  # ===================================================================
+  # 1. GEOPOLITICS & STRATEGIC CONFLICTS
+  # ===================================================================
+  - {id: ukraine_war,            label: "War in Ukraine & Eastern Flank",   query: "Ukraine war Russia invasion",           category: geopolitics}
+  - {id: middle_east,            label: "Israel-Gaza & Regional Conflict",  query: "Israel Gaza conflict Hamas Hezbollah",  category: geopolitics}
+  - {id: us_china,               label: "US–China Strategic Competition",   query: "US China rivalry relations",           category: geopolitics}
+  - {id: taiwan,                 label: "Taiwan Strait Security",           query: "Taiwan Strait China invasion tensions", category: geopolitics}
+  - {id: south_china_sea,        label: "South China Sea Maritime Disputes", query: "South China Sea Philippines maritime", category: geopolitics}
+  - {id: red_sea_security,       label: "Red Sea & Houthi Maritime Crisis", query: "Red Sea shipping Houthi attacks",      category: geopolitics}
+  - {id: brics_expansion,        label: "BRICS Expansion & Multipolarity",  query: "BRICS expansion dollar alternative",    category: geopolitics}
+  - {id: nato_enlargement,       label: "NATO Expansion & Defense Readiness", query: "NATO alliance defense expansion",     category: geopolitics}
+  - {id: sahel_coups,            label: "Sahel Region Coups & Instability", query: "Sahel coup Niger Mali Burkina Faso",    category: geopolitics}
+  - {id: korean_peninsula,       label: "North Korea & Peninsula Tensions", query: "North Korea ballistic missile nuclear", category: geopolitics}
+  - {id: nagorno_karabakh,       label: "Caucasus & Armenia-Azerbaijan",    query: "Armenia Azerbaijan Nagorno Karabakh",   category: geopolitics}
+  - {id: balkan_tensions,        label: "Balkans & Kosovo-Serbia Tensions", query: "Kosovo Serbia tensions Balkans",        category: geopolitics}
+  - {id: arctic_sovereignty,     label: "Arctic Geopolitics & Resources",   query: "Arctic sovereignty military resources", category: geopolitics}
+  - {id: indo_pacific_quad,      label: "Indo-Pacific & QUAD Coalition",    query: "Indo Pacific Quad Australia Japan",     category: geopolitics}
+  - {id: sudan_civil_war,        label: "Sudan Civil War & Humanitarian Crisis", query: "Sudan conflict SAF RSF war",       category: geopolitics}
+  - {id: myanmar_civil_war,      label: "Myanmar Civil War & Junta",        query: "Myanmar military junta resistance",     category: geopolitics}
+  - {id: iran_nuclear_program,   label: "Iran Nuclear Program & Sanctions", query: "Iran nuclear enrichment sanctions",    category: geopolitics}
+  - {id: global_sanctions_regime, label: "Global Sanctions & Trade Embargos", query: "sanctions economic warfare embargo", category: geopolitics}
 
-  # --- Parties -------------------------------------------------------
-  - {id: us_democrats,     label: Democratic Party (US),   query: "Democratic Party",     category: party}
-  - {id: us_republicans,   label: Republican Party (US),   query: "Republican Party",     category: party}
-  - {id: uk_labour,        label: Labour Party (UK),       query: "Labour Party",         category: party}
-  - {id: uk_conservatives, label: Conservative Party (UK), query: "Conservative Party",   category: party}
-  - {id: uk_reform,        label: Reform UK,               query: "Reform UK",            category: party}
-  - {id: de_afd,           label: AfD (Germany),           query: "AfD",                  category: party}
-  - {id: fr_rn,            label: Rassemblement National,  query: "Rassemblement National", category: party}
-  - {id: in_bjp,           label: Bharatiya Janata Party,  query: "BJP",                  category: party}
-  - {id: in_congress,      label: Indian National Congress, query: "Indian National Congress", category: party}
+  # ===================================================================
+  # 2. WORLD POLITICAL LEADERS & FIGURES
+  # ===================================================================
+  # --- Americas ---
+  - {id: donald_trump,           label: "Donald Trump",                     query: "Donald Trump",                          category: figure}
+  - {id: joe_biden,              label: "Joe Biden",                        query: "Joe Biden",                             category: figure}
+  - {id: kamala_harris,          label: "Kamala Harris",                    query: "Kamala Harris",                         category: figure}
+  - {id: justin_trudeau,         label: "Justin Trudeau",                   query: "Justin Trudeau",                        category: figure}
+  - {id: pierre_poilievre,       label: "Pierre Poilievre",                 query: "Pierre Poilievre",                      category: figure}
+  - {id: claudia_sheinbaum,      label: "Claudia Sheinbaum",                query: "Claudia Sheinbaum",                     category: figure}
+  - {id: lula,                   label: "Luiz Inácio Lula da Silva",        query: "Lula da Silva",                         category: figure}
+  - {id: javier_milei,           label: "Javier Milei",                     query: "Javier Milei",                          category: figure}
+  - {id: gustavo_petro,          label: "Gustavo Petro",                    query: "Gustavo Petro",                         category: figure}
+  - {id: nayib_bukele,           label: "Nayib Bukele",                     query: "Nayib Bukele",                          category: figure}
+  - {id: nicolas_maduro,         label: "Nicolás Maduro",                   query: "Nicolas Maduro Venezuela",              category: figure}
 
-  # --- Issues --------------------------------------------------------
-  - {id: inflation,        label: Inflation & cost of living, query: "inflation cost of living", category: issue}
-  - {id: unemployment,     label: Unemployment & jobs,     query: "unemployment jobs",    category: issue}
-  - {id: housing,          label: Housing affordability,   query: "housing affordability", category: issue}
-  - {id: taxation,         label: Taxation,                query: "taxes taxation",       category: issue}
-  - {id: immigration,      label: Immigration,             query: "immigration migrants", category: issue}
-  - {id: climate,          label: Climate policy,          query: "climate change net zero", category: issue}
-  - {id: energy_prices,    label: Energy prices,           query: "energy prices",        category: issue}
-  - {id: healthcare,       label: Healthcare,              query: "healthcare",           category: issue}
-  - {id: education,        label: Education,               query: "education schools",    category: issue}
-  - {id: abortion,         label: Abortion rights,         query: "abortion",             category: issue}
-  - {id: gun_control,      label: Gun control,             query: "gun control",          category: issue}
-  - {id: crime,            label: Crime & policing,        query: "crime policing",       category: issue}
-  - {id: corruption,       label: Corruption,              query: "corruption scandal",   category: issue}
-  - {id: ai_regulation,    label: AI regulation,           query: "artificial intelligence regulation", category: issue}
-  - {id: data_privacy,     label: Data privacy,            query: "data privacy",         category: issue}
-  - {id: free_speech,      label: Free speech & censorship, query: "free speech censorship", category: issue}
-  - {id: trade_tariffs,    label: Trade & tariffs,         query: "tariffs trade war",    category: issue}
-  - {id: pensions,         label: Pensions & retirement,   query: "pensions retirement",  category: issue}
-  - {id: defense_spending, label: Defense spending,        query: "defense spending",     category: issue}
-  - {id: elections,        label: Elections & democracy,   query: "election democracy",   category: issue}
-  - {id: misinformation,   label: Misinformation,          query: "misinformation disinformation", category: issue}
-  - {id: refugees,         label: Refugees & asylum,       query: "refugees asylum",      category: issue}
-  - {id: food_security,    label: Food security,           query: "food security",        category: issue}
-  - {id: water_scarcity,   label: Water scarcity,          query: "water scarcity drought", category: issue}
+  # --- Europe ---
+  - {id: keir_starmer,           label: "Keir Starmer",                     query: "Keir Starmer",                          category: figure}
+  - {id: rishi_sunak,            label: "Rishi Sunak",                      query: "Rishi Sunak",                           category: figure}
+  - {id: emmanuel_macron,        label: "Emmanuel Macron",                  query: "Emmanuel Macron",                       category: figure}
+  - {id: marine_le_pen,          label: "Marine Le Pen",                    query: "Marine Le Pen",                         category: figure}
+  - {id: olaf_scholz,            label: "Olaf Scholz",                      query: "Olaf Scholz",                           category: figure}
+  - {id: friedrich_merz,         label: "Friedrich Merz",                   query: "Friedrich Merz",                        category: figure}
+  - {id: giorgia_meloni,         label: "Giorgia Meloni",                   query: "Giorgia Meloni",                        category: figure}
+  - {id: pedro_sanchez,          label: "Pedro Sánchez",                    query: "Pedro Sanchez",                         category: figure}
+  - {id: viktor_orban,           label: "Viktor Orbán",                     query: "Viktor Orban",                          category: figure}
+  - {id: ursula_vdl,             label: "Ursula von der Leyen",             query: "Ursula von der Leyen",                  category: figure}
+  - {id: volodymyr_zelensky,     label: "Volodymyr Zelensky",               query: "Volodymyr Zelensky",                    category: figure}
+  - {id: vladimir_putin,         label: "Vladimir Putin",                   query: "Vladimir Putin",                        category: figure}
 
-  # --- Institutions --------------------------------------------------
-  - {id: european_union,   label: European Union,          query: "European Union",       category: institution}
-  - {id: united_nations,   label: United Nations,          query: "United Nations",       category: institution}
-  - {id: nato,             label: NATO,                    query: "NATO",                 category: institution}
-  - {id: who,              label: World Health Organization, query: "World Health Organization", category: institution}
-  - {id: imf,              label: IMF,                     query: "International Monetary Fund", category: institution}
-  - {id: world_bank,       label: World Bank,              query: "World Bank",           category: institution}
-  - {id: us_fed,           label: US Federal Reserve,      query: "Federal Reserve",      category: institution}
-  - {id: ecb,              label: European Central Bank,   query: "European Central Bank", category: institution}
-  - {id: us_supreme_court, label: US Supreme Court,        query: "Supreme Court",        category: institution}
-  - {id: opec,             label: OPEC,                    query: "OPEC",                 category: institution}
+  # --- Asia-Pacific ---
+  - {id: narendra_modi,          label: "Narendra Modi",                    query: "Narendra Modi",                         category: figure}
+  - {id: rahul_gandhi,           label: "Rahul Gandhi",                     query: "Rahul Gandhi",                          category: figure}
+  - {id: xi_jinping,             label: "Xi Jinping",                       query: "Xi Jinping",                            category: figure}
+  - {id: shigeru_ishiba,         label: "Shigeru Ishiba",                   query: "Shigeru Ishiba Japan",                  category: figure}
+  - {id: yoon_suk_yeol,          label: "Yoon Suk-yeol",                    query: "Yoon Suk-yeol Korea",                   category: figure}
+  - {id: anthony_albanese,       label: "Anthony Albanese",                 query: "Anthony Albanese",                      category: figure}
+  - {id: prabowo_subianto,       label: "Prabowo Subianto",                 query: "Prabowo Subianto Indonesia",            category: figure}
+  - {id: anwar_ibrahim,          label: "Anwar Ibrahim",                    query: "Anwar Ibrahim Malaysia",                category: figure}
+  - {id: kim_jong_un,            label: "Kim Jong Un",                      query: "Kim Jong Un",                           category: figure}
 
-  # --- Geopolitics / events -----------------------------------------
-  - {id: ukraine_war,      label: War in Ukraine,          query: "Ukraine war",          category: geopolitics}
-  - {id: middle_east,      label: Middle East conflict,    query: "Middle East conflict Gaza", category: geopolitics}
-  - {id: us_china,         label: US–China relations,      query: "US China relations",   category: geopolitics}
-  - {id: taiwan,           label: Taiwan tensions,         query: "Taiwan",               category: geopolitics}
-  - {id: sanctions,        label: Sanctions,               query: "sanctions",            category: geopolitics}
-  - {id: brexit,           label: Brexit aftermath,        query: "Brexit",               category: geopolitics}
-  - {id: energy_transition, label: Energy transition,      query: "renewable energy transition", category: geopolitics}
-  - {id: global_protests,  label: Protests & unrest,       query: "protests unrest",      category: geopolitics}
-  - {id: cyberattacks,     label: Cyberattacks,            query: "cyberattack",          category: geopolitics}
-  - {id: nuclear,          label: Nuclear proliferation,   query: "nuclear weapons",      category: geopolitics}
+  # --- Middle East & Africa ---
+  - {id: benjamin_netanyahu,     label: "Benjamin Netanyahu",               query: "Benjamin Netanyahu",                    category: figure}
+  - {id: mbs,                    label: "Mohammed bin Salman (MBS)",        query: "Mohammed bin Salman",                   category: figure}
+  - {id: erdogan,                label: "Recep Tayyip Erdoğan",             query: "Erdogan Turkey",                        category: figure}
+  - {id: ayatollah_khamenei,     label: "Ali Khamenei",                     query: "Khamenei Iran",                         category: figure}
+  - {id: cyril_ramaphosa,        label: "Cyril Ramaphosa",                  query: "Cyril Ramaphosa",                       category: figure}
+  - {id: william_ruto,           label: "William Ruto",                     query: "William Ruto Kenya",                    category: figure}
+  - {id: bola_tinubu,            label: "Bola Tinubu",                      query: "Bola Tinubu Nigeria",                   category: figure}
+  - {id: abdel_fattah_el_sisi,   label: "Abdel Fattah el-Sisi",             query: "Sisi Egypt",                            category: figure}
+
+  # ===================================================================
+  # 3. MAJOR POLITICAL PARTIES & COALITIONS
+  # ===================================================================
+  - {id: us_democrats,           label: "Democratic Party (US)",            query: "Democratic Party Democrats",            category: party}
+  - {id: us_republicans,         label: "Republican Party (US)",            query: "Republican Party GOP",                  category: party}
+  - {id: uk_labour,              label: "Labour Party (UK)",                query: "Labour Party UK",                       category: party}
+  - {id: uk_conservatives,       label: "Conservative Party (UK)",          query: "Conservative Party Tories",             category: party}
+  - {id: uk_reform,              label: "Reform UK",                        query: "Reform UK Nigel Farage",                category: party}
+  - {id: de_cdu,                 label: "CDU/CSU (Germany)",                query: "CDU CSU Germany",                       category: party}
+  - {id: de_afd,                 label: "AfD (Germany)",                    query: "AfD Alternative for Germany",           category: party}
+  - {id: fr_rn,                  label: "Rassemblement National (France)",  query: "Rassemblement National RN France",      category: party}
+  - {id: fr_nfp,                 label: "New Popular Front (France)",       query: "Nouveau Front Populaire France",        category: party}
+  - {id: it_fdi,                 label: "Brothers of Italy (FdI)",          query: "Fratelli d'Italia Meloni",              category: party}
+  - {id: in_bjp,                 label: "Bharatiya Janata Party (BJP)",     query: "BJP Bharatiya Janata Party",            category: party}
+  - {id: in_congress,            label: "Indian National Congress (INC)",   query: "Indian National Congress INC",          category: party}
+  - {id: jp_ldp,                 label: "Liberal Democratic Party (Japan)", query: "LDP Japan Liberal Democratic Party",    category: party}
+  - {id: za_anc,                 label: "African National Congress (ANC)",  query: "ANC African National Congress",         category: party}
+
+  # ===================================================================
+  # 4. SOCIO-ECONOMIC & DOMESTIC POLICY ISSUES
+  # ===================================================================
+  - {id: inflation,              label: "Inflation & Cost of Living",       query: "inflation cost of living prices",       category: issue}
+  - {id: housing,                label: "Housing Affordability & Rent Crisis", query: "housing affordability rent crisis",  category: issue}
+  - {id: taxation,               label: "Taxation & Wealth Tax Policies",   query: "taxation taxes income tax wealth tax",  category: issue}
+  - {id: unemployment,           label: "Unemployment & Labor Markets",     query: "unemployment jobs labor market",        category: issue}
+  - {id: strikes_unions,         label: "Trade Unions & Strike Action",     query: "strike union industrial action labor",  category: issue}
+  - {id: healthcare,             label: "Healthcare Access & Drug Pricing", query: "healthcare hospitals prescription drugs", category: issue}
+  - {id: pensions,               label: "Pensions & Retirement Reform",     query: "pensions retirement age social security", category: issue}
+  - {id: immigration,            label: "Immigration & Border Enforcement", query: "immigration border security asylum",    category: issue}
+  - {id: refugees,               label: "Refugees & Humanitarian Migration", query: "refugees asylum seekers deportation",  category: issue}
+  - {id: farmer_protests,        label: "Agriculture & Farmer Protests",    query: "farmer protests agricultural subsidies", category: issue}
+  - {id: education,              label: "Education & Student Debt",         query: "education schools student debt universities", category: issue}
+  - {id: abortion,               label: "Abortion & Reproductive Rights",   query: "abortion reproductive rights healthcare", category: issue}
+  - {id: gun_control,            label: "Gun Control & Second Amendment",   query: "gun control firearms second amendment", category: issue}
+  - {id: crime_policing,         label: "Crime, Policing & Public Safety",  query: "crime policing law and order justice",  category: issue}
+  - {id: drug_crisis,            label: "Drug Policy & Fentanyl Crisis",    query: "drug crisis fentanyl opioid overdose",  category: issue}
+  - {id: free_speech,            label: "Free Speech & Online Censorship",  query: "free speech censorship content moderation", category: issue}
+  - {id: misinformation,         label: "Misinformation & Deepfakes",       query: "misinformation disinformation deepfakes", category: issue}
+  - {id: corruption,             label: "Corruption & Graft Scandals",      query: "corruption graft bribery scandal",      category: issue}
+  - {id: voting_rights,          label: "Electoral Integrity & Voting Rights", query: "elections voting rights gerrymandering", category: issue}
+  - {id: civil_rights,           label: "Civil Liberties & Human Rights",   query: "human rights civil liberties protest",  category: issue}
+
+  # ===================================================================
+  # 5. MACROECONOMICS, RESOURCE & TECH SOVEREIGNTY
+  # ===================================================================
+  - {id: trade_tariffs,          label: "Trade Wars & Protective Tariffs",  query: "tariffs trade war protectionism",       category: macro_tech}
+  - {id: chip_wars,              label: "Semiconductors & Chip Sovereignty", query: "semiconductors chips TSMC export controls", category: macro_tech}
+  - {id: ai_regulation,          label: "AI Safety & Technology Governance", query: "AI regulation artificial intelligence safety", category: macro_tech}
+  - {id: de_dollarization,       label: "De-Dollarization & Reserve Currencies", query: "de dollarization central bank currency reserves", category: macro_tech}
+  - {id: critical_minerals,      label: "Critical Minerals & Lithium Supply", query: "critical minerals lithium rare earth mining", category: macro_tech}
+  - {id: sovereign_debt,         label: "Sovereign Debt & Fiscal Deficits", query: "sovereign debt national deficit bond yields", category: macro_tech}
+  - {id: energy_transition,      label: "Renewable Energy Transition & Net Zero", query: "energy transition net zero renewables climate", category: macro_tech}
+  - {id: nuclear_energy,         label: "Nuclear Energy & SMR Deployment",  query: "nuclear power energy reactors SMR",     category: macro_tech}
+  - {id: cyberwarfare,           label: "State Cyberwarfare & Espionage",   query: "cyberwarfare cyberattack espionage hacking", category: macro_tech}
+  - {id: space_militarization,   label: "Space Race & Satellite Defense",   query: "space race satellite defense military", category: macro_tech}
+  - {id: food_security,          label: "Global Food Supply & Grain Corridors", query: "food security grain prices fertilizer", category: macro_tech}
+  - {id: water_scarcity,         label: "Water Scarcity & Hydro-Politics",  query: "water scarcity drought hydro politics", category: macro_tech}
+  - {id: supply_chain_reshoring, label: "Supply Chain Reshoring & Friendshoring", query: "supply chain reshoring friendshoring nearshoring", category: macro_tech}
+  - {id: crypto_regulation,      label: "Cryptocurrency & Central Bank Digital Currencies (CBDC)", query: "crypto regulation CBDC digital currency", category: macro_tech}
+
+  # ===================================================================
+  # 6. MULTILATERAL & SUPRANATIONAL INSTITUTIONS
+  # ===================================================================
+  - {id: european_union,         label: "European Union (EU)",              query: "European Union EU Commission",          category: institution}
+  - {id: united_nations,         label: "United Nations (UN)",              query: "United Nations UN General Assembly",    category: institution}
+  - {id: nato,                   label: "NATO Military Alliance",           query: "NATO alliance North Atlantic Treaty",   category: institution}
+  - {id: who,                    label: "World Health Organization (WHO)",  query: "World Health Organization WHO",         category: institution}
+  - {id: imf,                    label: "International Monetary Fund (IMF)", query: "International Monetary Fund IMF",      category: institution}
+  - {id: world_bank,             label: "World Bank Group",                 query: "World Bank development loans",          category: institution}
+  - {id: wto,                    label: "World Trade Organization (WTO)",   query: "World Trade Organization WTO",          category: institution}
+  - {id: opec,                   label: "OPEC / OPEC+ Petroleum Cartel",    query: "OPEC oil production quotas cartel",     category: institution}
+  - {id: us_fed,                 label: "US Federal Reserve",               query: "Federal Reserve interest rates Powell", category: institution}
+  - {id: ecb,                    label: "European Central Bank (ECB)",      query: "European Central Bank Lagarde rates",   category: institution}
+  - {id: us_supreme_court,       label: "US Supreme Court (SCOTUS)",        query: "Supreme Court SCOTUS rulings",          category: institution}
+  - {id: icc_icj,                label: "International Criminal Court & ICJ", query: "International Criminal Court ICJ The Hague", category: institution}
+  - {id: african_union,          label: "African Union (AU)",               query: "African Union Addis Ababa summit",      category: institution}
+  - {id: asean,                  label: "ASEAN Regional Bloc",              query: "ASEAN Southeast Asia summit",           category: institution}
