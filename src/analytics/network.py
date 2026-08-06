@@ -36,8 +36,7 @@ def _assign_cluster(topic_id: str, category: str) -> dict[str, Any]:
 
 def build_ideological_network(min_correlation: float = 0.25, max_nodes: int = 30) -> dict[str, Any]:
     """Generate force-directed graph nodes and correlation edges for political entities."""
-    catalog = load_catalog()
-    topics = catalog.all_topics()[:max_nodes]
+    topics = load_catalog()[:max_nodes]
     today = date.today()
 
     # 1. Build nodes and collect time series
