@@ -179,6 +179,114 @@ export interface PollingComparisonData {
   }[];
 }
 
+export interface EconometricData {
+  topic: { id: string; label: string; category: string };
+  dates: string[];
+  raw_tone: number[];
+  hp_decomposition: {
+    cycle: number[];
+    trend: number[];
+    smoothness_lambda: number;
+    cyclical_variance_pct: number;
+  };
+  stationarity: {
+    is_stationary: boolean;
+    adf_statistic: number;
+    p_value: number;
+    critical_values: Record<string, number>;
+    interpretation: string;
+  };
+  structural_breaks: {
+    date: string;
+    index: number;
+    magnitude: number;
+    t_statistic: number;
+    type: string;
+    pre_mean: number;
+    post_mean: number;
+  }[];
+  volatility: {
+    series: number[];
+    current_volatility: number;
+    mean_volatility: number;
+    regime: string;
+  };
+}
+
+export interface MarketSpilloverData {
+  topic: { id: string; label: string; category: string };
+  asset: {
+    id: string;
+    name: string;
+    symbol: string;
+    category: string;
+    unit: string;
+    base_price: number;
+    volatility: number;
+    geopolitical_sensitivity: string;
+    description: string;
+  };
+  metrics: {
+    correlation_r: number;
+    spillover_beta: number;
+    contagion_score: number;
+    granger_causality: {
+      causality_detected: boolean;
+      optimal_lag_weeks: number;
+      f_statistic: number;
+      p_value: number;
+      verdict: string;
+    };
+    latest_price: number;
+    latest_tone: number;
+  };
+  series: {
+    date: string;
+    price: number;
+    return_pct: number;
+    sentiment_tone: number;
+  }[];
+}
+
+export interface PolarizationData {
+  topic: { id: string; label: string; category: string };
+  summary: {
+    latest_polarization_spread: number;
+    mean_polarization_spread: number;
+    polarization_tier: string;
+    tier_code: string;
+  };
+  spectra: {
+    id: string;
+    name: string;
+    color: string;
+    outlets: string[];
+    latest_tone: number;
+    movement: number;
+    volume: number;
+    keywords: string[];
+    series: number[];
+  }[];
+  timeline: {
+    date: string;
+    spread: number;
+    left_tone: number;
+    right_tone: number;
+  }[];
+}
+
+export interface AnalystDossierData {
+  topic: { id: string; label: string; category: string };
+  latest_tone: number;
+  generated_at: string;
+  bluf: string;
+  drivers: { title: string; impact: string; description: string }[];
+  stakeholders: { actor: string; stance: string; power: string; leverage: string }[];
+  scenarios: { name: string; probability: number; tone_projection: number; description: string }[];
+  vulnerabilities: string[];
+  source: string;
+}
+
 // ---- Shared config types ----
 export interface Country { gdelt: string; iso3: string; name: string; }
 export interface Entity {

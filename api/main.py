@@ -32,6 +32,11 @@ from api.routers import (
     simulator,
     network,
     polling,
+    timeseries,
+    markets,
+    polarization,
+    analyst,
+    live,
 )
 
 app = FastAPI(
@@ -69,6 +74,11 @@ app.include_router(geography.router)
 app.include_router(simulator.router)
 app.include_router(network.router)
 app.include_router(polling.router)
+app.include_router(timeseries.router)
+app.include_router(markets.router)
+app.include_router(polarization.router)
+app.include_router(analyst.router)
+app.include_router(live.router)
 
 
 @app.get("/health", tags=["meta"])

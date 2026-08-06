@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,12 +13,18 @@ import {
   SlidersHorizontal,
   Share2,
   Vote,
+  Activity,
+  DollarSign,
+  Newspaper,
+  Bot,
+  Radio,
   Menu,
   X,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useConfig } from "./config-context";
 import { cx, Badge } from "./ui";
+import { api } from "@/lib/api";
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
 const NAV: { section: string; items: Item[] }[] = [
@@ -29,7 +35,13 @@ const NAV: { section: string; items: Item[] }[] = [
     { href: "/topic", label: "Analyze a topic", icon: Search },
     { href: "/compare", label: "Compare topics", icon: GitCompareArrows },
   ]},
-  { section: "Advanced Analytics", items: [
+  { section: "Applied Analytics & AI", items: [
+    { href: "/analyst", label: "AI Geopolitical Analyst", icon: Bot },
+    { href: "/timeseries", label: "Applied Econometrics", icon: Activity },
+    { href: "/markets", label: "Financial Spillover", icon: DollarSign },
+    { href: "/polarization", label: "Media Polarization", icon: Newspaper },
+  ]},
+  { section: "Simulations & Research", items: [
     { href: "/simulator", label: "Policy Simulator", icon: SlidersHorizontal },
     { href: "/network", label: "Ideological Graph", icon: Share2 },
     { href: "/polling", label: "Polling vs Media", icon: Vote },
@@ -61,7 +73,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   className={cx(
                     "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
-                    active ? "bg-accent/15 text-accent" : "text-muted hover:bg-card2 hover:text-foreground",
+                    active ? "bg-accent/15 text-accent font-semibold" : "text-muted hover:bg-card2 hover:text-foreground",
                   )}
                 >
                   <Icon size={17} />
@@ -73,6 +85,53 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       ))}
     </nav>
+  );
+}
+
+function LiveTickerBar() {
+  const [pulse, setPulse] = useState<any>({
+    topic: "Global Macro",
+    outlet: "Reuters",
+    headline: "Monitoring real-time narrative velocity & market contagion.",
+    tone: 0.0,
+    velocity: "+15% vol",
+  });
+
+  useEffect(() => {
+    // Initial fetch
+    api<any>("/api/live/latest")
+      .then((res) => setPulse(res))
+      .catch(() => {});
+
+    // Periodic live tick update
+    const interval = setInterval(() => {
+      api<any>("/api/live/latest")
+        .then((res) => setPulse(res))
+        .catch(() => {});
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex w-full items-center justify-between border-b border-border bg-card/70 px-4 py-2 text-xs backdrop-blur-sm">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <span className="flex h-2 w-2 relative shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+        </span>
+        <span className="font-semibold text-[11px] uppercase tracking-wider text-rose-500 shrink-0 flex items-center gap-1">
+          <Radio size={12} /> LIVE PULSE:
+        </span>
+        <span className="font-medium text-foreground truncate max-w-xl">
+          <strong className="text-accent">{pulse.topic}</strong> ({pulse.outlet}): {pulse.headline}
+        </span>
+      </div>
+      <div className="hidden sm:flex items-center gap-3 shrink-0 text-[11px] font-mono">
+        <span className="text-muted">Net: <strong className={pulse.tone >= 0 ? "text-emerald-400" : "text-rose-400"}>{pulse.tone > 0 ? "+" : ""}{pulse.tone}</strong></span>
+        <span className="text-muted">Velocity: <strong className="text-foreground">{pulse.velocity}</strong></span>
+      </div>
+    </div>
   );
 }
 
@@ -101,7 +160,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Brand />
         <NavList />
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted">
-          <span>v2</span>
+          <span>v2.1 Enterprise</span>
           <ThemeToggle />
         </div>
       </aside>
@@ -114,7 +173,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Brand />
             <NavList onNavigate={() => setOpen(false)} />
             <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted">
-              <span>v2</span><ThemeToggle />
+              <span>v2.1 Enterprise</span><ThemeToggle />
             </div>
           </aside>
         </div>
@@ -128,6 +187,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
           <span className="text-sm font-semibold">🌍 Sentiment Tracker</span>
         </header>
+
+        {/* Live Ticker Pulse Header */}
+        <LiveTickerBar />
+
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8">{children}</main>
       </div>
     </div>
