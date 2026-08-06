@@ -11,9 +11,9 @@ export const DISCLAIMER =
   "Scores are media / social sentiment — coverage tone and vocal social posts, " +
   "not representative public opinion. Thin coverage is flagged low-confidence.";
 
-export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
+export function Card({ className, style, children }: { className?: string; style?: React.CSSProperties; children: React.ReactNode }) {
   return (
-    <div className={cx("rounded-xl border border-border bg-card", className)}>
+    <div className={cx("rounded-xl border border-border bg-card", className)} style={style}>
       {children}
     </div>
   );
