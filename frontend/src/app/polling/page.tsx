@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ReactECharts from "echarts-for-react";
 import { api, PollingComparisonData } from "@/lib/api";
 import { Card, Badge, cx } from "@/components/ui";
-import { Vote, Scale, TrendingUp, TrendingDown, Info, ShieldCheck, Newspaper } from "lucide-react";
+import { EChart, useChartTheme } from "@/components/echart";
+import { fmtSigned } from "@/lib/format";
+import { Vote, Scale } from "lucide-react";
+import type { EChartsCoreOption } from "echarts";
 
 export default function PollingPage() {
+  const theme = useChartTheme();
   const [entities, setEntities] = useState<any[]>([]);
   const [selectedEntity, setSelectedEntity] = useState("donald_trump");
   const [weeks, setWeeks] = useState(26);
@@ -32,25 +35,26 @@ export default function PollingPage() {
   }, [selectedEntity, weeks]);
 
   // ECharts Multi-Axis Synchronized Chart
-  const chartOption = data ? {
+  const chartOption: EChartsCoreOption = data ? {
     backgroundColor: "transparent",
     tooltip: {
       trigger: "axis",
-      backgroundColor: "rgba(20, 24, 33, 0.95)",
-      borderColor: "#334155",
-      textStyle: { color: "#f1f5f9", fontSize: 12 },
+      backgroundColor: theme.card,
+      borderColor: theme.border,
+      textStyle: { color: theme.fg, fontSize: 12 },
     },
     legend: {
       data: ["Voter Approval (%)", "Press Media Tone", "Media Framing Gap"],
-      textStyle: { color: "#94a3b8" },
+      textStyle: { color: theme.muted },
       bottom: 0,
+      icon: "roundRect",
     },
     grid: { left: 45, right: 45, top: 25, bottom: 40 },
     xAxis: {
       type: "category",
       data: data.series.map((s) => s.date),
-      axisLine: { lineStyle: { color: "#334155" } },
-      axisLabel: { color: "#94a3b8", fontSize: 11 },
+      axisLine: { lineStyle: { color: theme.border } },
+      axisLabel: { color: theme.muted, fontSize: 11 },
     },
     yAxis: [
       {
@@ -58,18 +62,18 @@ export default function PollingPage() {
         name: "Approval %",
         min: 0,
         max: 100,
-        nameTextStyle: { color: "#38bdf8", fontSize: 11 },
-        splitLine: { lineStyle: { color: "#1e293b", type: "dashed" } },
-        axisLabel: { color: "#38bdf8", fontSize: 11 },
+        nameTextStyle: { color: theme.accent, fontSize: 11 },
+        splitLine: { lineStyle: { color: theme.grid, opacity: 0.35, type: "dashed" } },
+        axisLabel: { color: theme.accent, fontSize: 11 },
       },
       {
         type: "value",
         name: "Tone Score",
         min: -10,
         max: 10,
-        nameTextStyle: { color: "#a855f7", fontSize: 11 },
+        nameTextStyle: { color: theme.accent2, fontSize: 11 },
         splitLine: { show: false },
-        axisLabel: { color: "#a855f7", fontSize: 11 },
+        axisLabel: { color: theme.accent2, fontSize: 11 },
       },
     ],
     series: [
@@ -78,8 +82,8 @@ export default function PollingPage() {
         type: "line",
         yAxisIndex: 0,
         data: data.series.map((s) => s.approval_pct),
-        lineStyle: { color: "#38bdf8", width: 3 },
-        itemStyle: { color: "#38bdf8" },
+        lineStyle: { color: theme.accent, width: 3 },
+        itemStyle: { color: theme.accent },
         symbol: "circle",
         symbolSize: 6,
       },
@@ -88,8 +92,8 @@ export default function PollingPage() {
         type: "line",
         yAxisIndex: 1,
         data: data.series.map((s) => s.media_tone),
-        lineStyle: { color: "#a855f7", width: 2.5 },
-        itemStyle: { color: "#a855f7" },
+        lineStyle: { color: theme.accent2, width: 2.5 },
+        itemStyle: { color: theme.accent2 },
         symbol: "diamond",
         symbolSize: 6,
       },
@@ -99,7 +103,7 @@ export default function PollingPage() {
         yAxisIndex: 1,
         data: data.series.map((s) => s.bias_gap),
         itemStyle: {
-          color: (params: any) => (params.value >= 0 ? "rgba(16, 185, 129, 0.45)" : "rgba(239, 68, 68, 0.45)"),
+          color: (params: any) => (params.value >= 0 ? "rgba(52, 211, 153, 0.45)" : "rgba(248, 113, 113, 0.45)"),
         },
       },
     ],
@@ -132,7 +136,7 @@ export default function PollingPage() {
               className={cx(
                 "rounded-full px-3.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
                 selectedEntity === e.id
-                  ? "bg-accent text-accent-foreground shadow-sm shadow-accent/20"
+                  ? "bg-accent text-white shadow-sm"
                   : "bg-card2 hover:bg-card border border-border text-muted hover:text-foreground"
               )}
             >
@@ -181,7 +185,7 @@ export default function PollingPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Card className="p-4">
               <div className="text-xs text-muted">Latest Voter Approval</div>
-              <div className="mt-1 text-2xl font-bold font-mono text-sky-400">
+              <div className="mt-1 text-2xl font-bold font-mono text-accent">
                 {data.latest.approval_pct}%
               </div>
             </Card>
@@ -189,24 +193,24 @@ export default function PollingPage() {
               <div className="text-xs text-muted">Press Coverage Tone</div>
               <div className={cx(
                 "mt-1 text-2xl font-bold font-mono",
-                data.latest.media_tone >= 0 ? "text-emerald-400" : "text-rose-400"
+                data.latest.media_tone >= 0 ? "text-positive" : "text-negative"
               )}>
-                {data.latest.media_tone > 0 ? `+${data.latest.media_tone}` : data.latest.media_tone}
+                {fmtSigned(data.latest.media_tone)}
               </div>
             </Card>
             <Card className="p-4">
               <div className="text-xs text-muted">Media Bias Index</div>
               <div className={cx(
                 "mt-1 text-2xl font-bold font-mono",
-                data.latest.media_bias_index >= 0 ? "text-emerald-400" : "text-rose-400"
+                data.latest.media_bias_index >= 0 ? "text-positive" : "text-negative"
               )}>
-                {data.latest.media_bias_index > 0 ? `+${data.latest.media_bias_index}` : data.latest.media_bias_index} pts
+                {fmtSigned(data.latest.media_bias_index)} pts
               </div>
             </Card>
             <Card className="p-4">
               <div className="text-xs text-muted">Polling-Tone Correlation</div>
-              <div className="mt-1 text-2xl font-bold font-mono text-purple-400">
-                r = {data.latest.correlation_r > 0 ? `+${data.latest.correlation_r}` : data.latest.correlation_r}
+              <div className="mt-1 text-2xl font-bold font-mono text-accent2">
+                r = {fmtSigned(data.latest.correlation_r)}
               </div>
             </Card>
           </div>
@@ -219,12 +223,12 @@ export default function PollingPage() {
                   <h3 className="font-semibold text-sm">Voter Approval Rating vs. Press Tone Trajectory</h3>
                   <div className="text-xs text-muted">{data.entity.title} ({data.entity.country})</div>
                 </div>
-                <Badge tone={data.latest.verdict_code === "balanced_framing" ? "success" : "warning"}>
+                <Badge tone={data.latest.verdict_code === "balanced_framing" ? "positive" : "warning"}>
                   {data.latest.verdict_code === "balanced_framing" ? "Balanced Tracking" : "Framing Divergence"}
                 </Badge>
               </div>
               <div className="h-80 w-full">
-                <ReactECharts option={chartOption} style={{ height: "100%", width: "100%" }} />
+                <EChart height={300} option={chartOption} />
               </div>
             </Card>
 
@@ -239,7 +243,7 @@ export default function PollingPage() {
                     {data.latest.verdict}
                   </div>
                   <p className="text-[11px] text-muted mt-2 leading-relaxed">
-                    A Media Bias Gap of <span className="font-mono font-semibold text-foreground">{data.latest.media_bias_index > 0 ? `+${data.latest.media_bias_index}` : data.latest.media_bias_index}</span> indicates the degree to which mainstream media framing diverges from ballot-box voter sentiment.
+                    A Media Bias Gap of <span className="font-mono font-semibold text-foreground">{fmtSigned(data.latest.media_bias_index)}</span> indicates the degree to which mainstream media framing diverges from ballot-box voter sentiment.
                   </p>
                 </div>
 

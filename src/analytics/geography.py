@@ -1,11 +1,12 @@
 """Geographical intelligence and world sentiment map aggregations."""
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
 from typing import Any
+from datetime import date
 import numpy as np
+import pandas as pd
 
-from src.topics.synth import country_weekly, global_weekly
+from src.topics.synth import global_weekly
 from src.topics.catalog import load_catalog
 
 
@@ -46,13 +47,14 @@ def get_world_sentiment_map(region: str = "all") -> dict[str, Any]:
     hotspot_count = 0
     total_articles = 0
     all_tones = []
+    today = date.today()
 
     for c in COUNTRY_REGISTRY:
         if region != "all" and region.lower() not in c["groups"]:
             continue
 
-        # Get synthetic or real country tone series
-        df = country_weekly(c["name"])
+        # Get deterministic country tone series
+        df = global_weekly(c["name"], end=today)
         if df.empty or len(df) < 2:
             continue
 

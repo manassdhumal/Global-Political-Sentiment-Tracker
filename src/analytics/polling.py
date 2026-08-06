@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from typing import Any
+from datetime import date
 import pandas as pd
 import numpy as np
 
 from src.ingestion.polling_client import get_entity_polling_series, POLLING_ENTITIES
-from src.topics.synth import topic_weekly
+from src.topics.synth import global_weekly
 
 
 def compare_polling_vs_sentiment(entity_id: str, weeks: int = 26) -> dict[str, Any]:
@@ -18,21 +19,22 @@ def compare_polling_vs_sentiment(entity_id: str, weeks: int = 26) -> dict[str, A
     # 1. Fetch polling series
     df_poll = get_entity_polling_series(entity_id, weeks=weeks)
 
-    # 2. Fetch media/opinion series for topic
-    df_topic = topic_weekly(entity_id)
-    if df_topic.empty:
-        # Generate aligned topic fallback
-        df_topic = topic_weekly("donald_trump")
+    # 2. Fetch media series for topic
+    df_topic = global_weekly(entity_meta["label"], end=date.today())
+    if df_topic.empty or len(df_topic) < 5:
+        df_topic = global_weekly("politics", end=date.today())
 
     # Align dates
+    df_topic["date"] = pd.to_datetime(df_topic["week_start"]).dt.strftime("%Y-%m-%d")
     df_merged = pd.merge(df_poll, df_topic, on="date", how="inner").dropna()
     if len(df_merged) < 5:
-        # Fallback alignment if date formats vary
+        # Fallback alignment if date frequencies differ
         df_merged = df_poll.copy()
+        topic_tones = df_topic["avg_tone"].to_numpy()
         df_merged["avg_tone"] = np.interp(
             np.linspace(0, 1, len(df_poll)),
-            np.linspace(0, 1, len(df_topic)),
-            df_topic["avg_tone"].to_numpy()
+            np.linspace(0, 1, len(topic_tones)),
+            topic_tones
         )
 
     # 3. Calculate Media Framing Bias Index

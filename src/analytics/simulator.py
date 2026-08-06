@@ -1,12 +1,13 @@
 """Counterfactual Policy Impact & Scenario Simulation Engine."""
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
 from typing import Any
+from datetime import date
 import numpy as np
 import pandas as pd
 
-from src.topics.analyze import analyze_topic
+from src.topics.catalog import resolve_topic
+from src.topics.synth import global_weekly, opinion_weekly
 
 
 EVENT_PRESETS: dict[str, dict[str, Any]] = {
@@ -93,19 +94,18 @@ def simulate_policy_shock(
     custom_description: str | None = None,
 ) -> dict[str, Any]:
     """Simulate a hypothetical policy shock on a topic's trajectory."""
-    # 1. Load baseline topic data
-    data = analyze_topic(topic_id)
-    topic_meta = data["topic"]
-    media_series = data["media_series"]
-    opinion_series = data["opinion_series"]
+    today = date.today()
+    topic = resolve_topic(topic_id)
+    df_media = global_weekly(topic.label, end=today)
+    df_op = opinion_weekly(topic.label, end=today)
 
-    if not media_series:
-        raise ValueError(f"No series data found for topic: {topic_id}")
+    if df_media.empty or len(df_media) < 2:
+        df_media = global_weekly("politics", end=today)
 
-    # Baseline current level
-    last_media_tone = float(media_series[-1]["avg_tone"])
-    last_opinion_tone = float(opinion_series[-1]["sentiment"]) if opinion_series else last_media_tone
-    last_date = pd.to_datetime(media_series[-1]["date"])
+    media_tones = df_media["avg_tone"].to_numpy()
+    last_media_tone = float(media_tones[-1])
+    last_opinion_tone = float(df_op["avg_sentiment"].iloc[-1]) if not df_op.empty else last_media_tone
+    last_date = pd.to_datetime(df_media["week_start"].iloc[-1])
 
     # 2. Get shock profile
     preset = EVENT_PRESETS.get(event_type, {
@@ -128,7 +128,6 @@ def simulate_policy_shock(
         for w in range(1, weeks_ahead + 1)
     ]
 
-    # Baseline gentle mean-reversion
     baseline_media = []
     baseline_public = []
     shocked_media = []
@@ -138,8 +137,6 @@ def simulate_policy_shock(
 
     cur_base_m = last_media_tone
     cur_base_p = last_opinion_tone
-    cur_shock_m = last_media_tone + tone_impulse
-    cur_shock_p = last_opinion_tone + (tone_impulse + divergence_impulse * 0.5)
 
     for step in range(weeks_ahead):
         # Baseline drift towards neutral 0
@@ -177,7 +174,7 @@ def simulate_policy_shock(
         impact_severity = "High Market & Political Impact"
 
     return {
-        "topic": topic_meta,
+        "topic": {"id": topic.id, "label": topic.label, "category": topic.category},
         "event": {
             "type": event_type,
             "label": preset["label"],

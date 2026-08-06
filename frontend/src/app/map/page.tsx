@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, WorldMapData, WorldCountrySentiment } from "@/lib/api";
-import { Card, Badge, Metric, cx } from "@/components/ui";
-import { Sparkline } from "@/components/sparkline";
-import { Globe, Flame, AlertCircle, TrendingUp, TrendingDown, ArrowRight, ShieldAlert, Filter } from "lucide-react";
+import { Card, Badge, cx } from "@/components/ui";
+import { EChart } from "@/components/echart";
+import { toneColor, fmtSigned } from "@/lib/format";
+import { Globe, Flame, TrendingUp, TrendingDown, ArrowRight, Filter } from "lucide-react";
+import type { EChartsCoreOption } from "echarts";
 
 const REGIONS = [
   { id: "all", label: "🌍 Global (All)" },
@@ -18,6 +20,25 @@ const REGIONS = [
   { id: "apac", label: "🌏 Asia-Pacific" },
   { id: "middle_east", label: "🏜️ Middle East" },
 ];
+
+function sparkOption(spark: number[], color: string): EChartsCoreOption {
+  return {
+    grid: { left: 2, right: 2, top: 4, bottom: 2 },
+    xAxis: { type: "category", show: false, data: spark.map((_, i) => i) },
+    yAxis: { type: "value", show: false, scale: true },
+    tooltip: { show: false },
+    series: [
+      {
+        type: "line",
+        data: spark,
+        showSymbol: false,
+        smooth: 0.3,
+        lineStyle: { width: 2, color },
+        areaStyle: { color, opacity: 0.12 },
+      },
+    ],
+  };
+}
 
 export default function WorldMapPage() {
   const [region, setRegion] = useState("all");
@@ -94,7 +115,7 @@ export default function WorldMapPage() {
             className={cx(
               "rounded-full px-3.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
               region === r.id
-                ? "bg-accent text-accent-foreground shadow-sm shadow-accent/20"
+                ? "bg-accent text-white shadow-sm"
                 : "bg-card hover:bg-card2 border border-border text-muted hover:text-foreground"
             )}
           >
@@ -123,7 +144,7 @@ export default function WorldMapPage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {data.countries.map((c) => {
                 const isSelected = selectedCountry?.iso3 === c.iso3;
-                const isPositive = c.latest_tone >= 0;
+                const color = toneColor(c.latest_tone);
                 return (
                   <div
                     key={c.iso3}
@@ -152,28 +173,25 @@ export default function WorldMapPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className={cx(
-                          "text-base font-bold tabular-nums",
-                          isPositive ? "text-emerald-500" : "text-rose-500"
-                        )}>
-                          {isPositive ? `+${c.latest_tone}` : c.latest_tone}
+                        <div className="text-base font-bold tabular-nums" style={{ color }}>
+                          {fmtSigned(c.latest_tone)}
                         </div>
                         <div className={cx(
                           "text-[10px] tabular-nums font-medium flex items-center justify-end gap-0.5",
                           c.movement >= 0 ? "text-emerald-500" : "text-rose-400"
                         )}>
                           {c.movement >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                          {c.movement >= 0 ? `+${c.movement}` : c.movement} DoD
+                          {fmtSigned(c.movement)} WoW
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50">
                       <div className="text-[11px] text-muted">
-                        Public Gap: <span className="font-mono text-foreground font-medium">{c.gap > 0 ? `+${c.gap}` : c.gap}</span>
+                        Public Gap: <span className="font-mono text-foreground font-medium">{fmtSigned(c.gap)}</span>
                       </div>
-                      <div className="w-24">
-                        <Sparkline data={c.spark} />
+                      <div className="w-24 h-8">
+                        <EChart height={32} option={sparkOption(c.spark, color)} />
                       </div>
                     </div>
                   </div>
@@ -195,8 +213,8 @@ export default function WorldMapPage() {
                     </div>
                   </div>
                   {selectedCountry.is_hotspot && (
-                    <Badge tone="danger" className="animate-pulse">
-                      <Flame size={12} className="mr-1 inline" /> SHOCK ALERT
+                    <Badge tone="negative">
+                      <Flame size={12} className="mr-1 inline" /> HOTSPOT
                     </Badge>
                   )}
                 </div>
@@ -205,20 +223,14 @@ export default function WorldMapPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-lg bg-card2 p-3 border border-border/50">
                     <div className="text-[11px] text-muted">Press Tone</div>
-                    <div className={cx(
-                      "text-xl font-bold tabular-nums",
-                      selectedCountry.latest_tone >= 0 ? "text-emerald-500" : "text-rose-500"
-                    )}>
-                      {selectedCountry.latest_tone >= 0 ? `+${selectedCountry.latest_tone}` : selectedCountry.latest_tone}
+                    <div className="text-xl font-bold tabular-nums" style={{ color: toneColor(selectedCountry.latest_tone) }}>
+                      {fmtSigned(selectedCountry.latest_tone)}
                     </div>
                   </div>
                   <div className="rounded-lg bg-card2 p-3 border border-border/50">
                     <div className="text-[11px] text-muted">Public Sentiment</div>
-                    <div className={cx(
-                      "text-xl font-bold tabular-nums",
-                      selectedCountry.public_sentiment >= 0 ? "text-emerald-500" : "text-rose-500"
-                    )}>
-                      {selectedCountry.public_sentiment >= 0 ? `+${selectedCountry.public_sentiment}` : selectedCountry.public_sentiment}
+                    <div className="text-xl font-bold tabular-nums" style={{ color: toneColor(selectedCountry.public_sentiment) }}>
+                      {fmtSigned(selectedCountry.public_sentiment)}
                     </div>
                   </div>
                 </div>
@@ -227,7 +239,7 @@ export default function WorldMapPage() {
                 <div className="space-y-1.5">
                   <div className="text-xs font-medium text-muted">12-Week Tone Velocity</div>
                   <div className="h-14 w-full rounded-lg bg-card2/60 p-2 border border-border/40">
-                    <Sparkline data={selectedCountry.spark} />
+                    <EChart height={45} option={sparkOption(selectedCountry.spark, toneColor(selectedCountry.latest_tone))} />
                   </div>
                 </div>
 

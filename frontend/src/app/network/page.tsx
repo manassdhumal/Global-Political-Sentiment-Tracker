@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import ReactECharts from "echarts-for-react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { api, NetworkGraphData } from "@/lib/api";
 import { Card, Badge, cx } from "@/components/ui";
-import { Share2, Network, Filter, ArrowRight, Activity, Zap, Layers } from "lucide-react";
+import { EChart, useChartTheme } from "@/components/echart";
+import { fmtSigned } from "@/lib/format";
+import { Share2, ArrowRight, Layers } from "lucide-react";
+import type { EChartsCoreOption, ECharts } from "echarts";
 
 export default function NetworkPage() {
+  const theme = useChartTheme();
   const [minCorr, setMinCorr] = useState(0.25);
   const [data, setData] = useState<NetworkGraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<number | "all">("all");
+  const chartInstance = useRef<ECharts | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -34,7 +38,7 @@ export default function NetworkPage() {
   const nodeIds = new Set(filteredNodes.map((n) => n.id));
   const filteredLinks = data ? data.links.filter((l) => nodeIds.has(l.source) && nodeIds.has(l.target)) : [];
 
-  const graphOption = data ? {
+  const graphOption: EChartsCoreOption = data ? {
     backgroundColor: "transparent",
     tooltip: {
       formatter: (params: any) => {
@@ -56,9 +60,9 @@ export default function NetworkPage() {
           `;
         }
       },
-      backgroundColor: "rgba(20, 24, 33, 0.95)",
-      borderColor: "#334155",
-      textStyle: { color: "#f1f5f9" },
+      backgroundColor: theme.card,
+      borderColor: theme.border,
+      textStyle: { color: theme.fg },
     },
     series: [
       {
@@ -70,7 +74,7 @@ export default function NetworkPage() {
         label: {
           show: true,
           position: "right",
-          color: "#cbd5e1",
+          color: theme.fg,
           fontSize: 11,
         },
         force: {
@@ -86,10 +90,13 @@ export default function NetworkPage() {
     ],
   } : {};
 
-  const onChartClick = (params: any) => {
-    if (params.dataType === "node") {
-      setSelectedNode(params.data);
-    }
+  const handleChartReady = (chart: ECharts) => {
+    chartInstance.current = chart;
+    chart.on("click", (params: any) => {
+      if (params.dataType === "node") {
+        setSelectedNode(params.data);
+      }
+    });
   };
 
   return (
@@ -117,7 +124,7 @@ export default function NetworkPage() {
             className={cx(
               "rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all",
               selectedCluster === "all"
-                ? "bg-accent text-accent-foreground font-semibold"
+                ? "bg-accent text-white font-semibold"
                 : "bg-card2 hover:bg-card border border-border text-muted"
             )}
           >
@@ -130,7 +137,7 @@ export default function NetworkPage() {
               className={cx(
                 "rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
                 selectedCluster === c.id
-                  ? "bg-accent text-accent-foreground font-semibold"
+                  ? "bg-accent text-white font-semibold"
                   : "bg-card2 hover:bg-card border border-border text-muted"
               )}
             >
@@ -178,11 +185,7 @@ export default function NetworkPage() {
               <span>🔴 Red = Polarized Inverse</span>
             </div>
             <div className="h-[520px] w-full">
-              <ReactECharts
-                option={graphOption}
-                onEvents={{ click: onChartClick }}
-                style={{ height: "100%", width: "100%" }}
-              />
+              <EChart height={520} option={graphOption} onReady={handleChartReady} />
             </div>
           </Card>
 
@@ -210,7 +213,7 @@ export default function NetworkPage() {
                       "text-lg font-bold font-mono",
                       selectedNode.latest_tone >= 0 ? "text-emerald-500" : "text-rose-500"
                     )}>
-                      {selectedNode.latest_tone > 0 ? `+${selectedNode.latest_tone}` : selectedNode.latest_tone}
+                      {fmtSigned(selectedNode.latest_tone)}
                     </div>
                   </div>
                   <div className="rounded-lg bg-card2 p-3 border border-border/50">
@@ -237,7 +240,7 @@ export default function NetworkPage() {
                               "font-mono font-bold",
                               l.value > 0 ? "text-emerald-400" : "text-rose-400"
                             )}>
-                              {l.value > 0 ? `+${l.value}` : l.value}
+                              {fmtSigned(l.value)}
                             </span>
                           </div>
                         );

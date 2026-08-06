@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ReactECharts from "echarts-for-react";
 import { api, apiPost, SimulationResult } from "@/lib/api";
-import { Card, Badge, Button, Input, Metric, cx } from "@/components/ui";
-import { SlidersHorizontal, Play, Sparkles, AlertTriangle, ShieldCheck, RefreshCw, Zap } from "lucide-react";
+import { Card, Badge, cx } from "@/components/ui";
+import { EChart, useChartTheme } from "@/components/echart";
+import { fmtSigned } from "@/lib/format";
+import { SlidersHorizontal, Play, RefreshCw, Zap } from "lucide-react";
+import type { EChartsCoreOption } from "echarts";
 
 const TOPIC_PRESETS = [
   { id: "inflation", label: "Inflation & Cost of Living" },
@@ -17,6 +19,7 @@ const TOPIC_PRESETS = [
 ];
 
 export default function SimulatorPage() {
+  const theme = useChartTheme();
   const [topic, setTopic] = useState("inflation");
   const [eventType, setEventType] = useState("rate_hike");
   const [magnitude, setMagnitude] = useState(1.0);
@@ -55,48 +58,49 @@ export default function SimulatorPage() {
   }, []);
 
   // ECharts Option for Baseline vs Counterfactual Scenario
-  const chartOption = result ? {
+  const chartOption: EChartsCoreOption = result ? {
     backgroundColor: "transparent",
     tooltip: {
       trigger: "axis",
-      backgroundColor: "rgba(20, 24, 33, 0.95)",
-      borderColor: "#334155",
-      textStyle: { color: "#f1f5f9", fontSize: 12 },
+      backgroundColor: theme.card,
+      borderColor: theme.border,
+      textStyle: { color: theme.fg, fontSize: 12 },
     },
     legend: {
-      data: ["Baseline Forecast", "Simulated Shock (Media)", "Simulated Shock (Public)", "Confidence Envelope"],
-      textStyle: { color: "#94a3b8" },
+      data: ["Baseline Forecast", "Simulated Shock (Media)", "Simulated Shock (Public)"],
+      textStyle: { color: theme.muted },
       bottom: 0,
+      icon: "roundRect",
     },
     grid: { left: 45, right: 25, top: 25, bottom: 40 },
     xAxis: {
       type: "category",
       data: result.simulation.dates,
-      axisLine: { lineStyle: { color: "#334155" } },
-      axisLabel: { color: "#94a3b8", fontSize: 11 },
+      axisLine: { lineStyle: { color: theme.border } },
+      axisLabel: { color: theme.muted, fontSize: 11 },
     },
     yAxis: {
       type: "value",
       name: "Tone Score",
-      nameTextStyle: { color: "#64748b", fontSize: 11 },
-      splitLine: { lineStyle: { color: "#1e293b", type: "dashed" } },
-      axisLabel: { color: "#94a3b8", fontSize: 11 },
+      nameTextStyle: { color: theme.muted, fontSize: 11 },
+      splitLine: { lineStyle: { color: theme.grid, opacity: 0.35, type: "dashed" } },
+      axisLabel: { color: theme.muted, fontSize: 11 },
     },
     series: [
       {
         name: "Baseline Forecast",
         type: "line",
         data: result.simulation.baseline_media,
-        lineStyle: { color: "#64748b", width: 2, type: "dashed" },
-        itemStyle: { color: "#64748b" },
+        lineStyle: { color: theme.muted, width: 2, type: "dashed" },
+        itemStyle: { color: theme.muted },
         symbol: "none",
       },
       {
         name: "Simulated Shock (Media)",
         type: "line",
         data: result.simulation.shocked_media,
-        lineStyle: { color: "#ef4444", width: 3 },
-        itemStyle: { color: "#ef4444" },
+        lineStyle: { color: theme.negative, width: 3 },
+        itemStyle: { color: theme.negative },
         symbol: "circle",
         symbolSize: 6,
       },
@@ -104,27 +108,10 @@ export default function SimulatorPage() {
         name: "Simulated Shock (Public)",
         type: "line",
         data: result.simulation.shocked_public,
-        lineStyle: { color: "#38bdf8", width: 2.5 },
-        itemStyle: { color: "#38bdf8" },
+        lineStyle: { color: theme.accent, width: 2.5 },
+        itemStyle: { color: theme.accent },
         symbol: "circle",
         symbolSize: 5,
-      },
-      {
-        name: "Confidence Envelope",
-        type: "line",
-        data: result.simulation.shocked_upper,
-        lineStyle: { opacity: 0 },
-        stack: "confidence",
-        symbol: "none",
-      },
-      {
-        name: "Confidence Envelope",
-        type: "line",
-        data: result.simulation.shocked_lower.map((low, i) => result.simulation.shocked_upper[i] - low),
-        lineStyle: { opacity: 0 },
-        areaStyle: { color: "rgba(239, 68, 68, 0.12)" },
-        stack: "confidence",
-        symbol: "none",
       },
     ],
   } : {};
@@ -188,7 +175,7 @@ export default function SimulatorPage() {
               max="12"
               value={weeksAhead}
               onChange={(e) => setWeeksAhead(Number(e.target.value))}
-              className="w-full accent-accent"
+              className="w-full accent-accent mt-2"
             />
           </div>
         </div>
@@ -209,10 +196,14 @@ export default function SimulatorPage() {
             <span className="text-xs font-mono font-bold text-accent">{magnitude.toFixed(1)}x</span>
           </div>
 
-          <Button onClick={runSimulation} disabled={loading} className="gap-2">
+          <button
+            onClick={runSimulation}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 rounded-lg bg-accent text-white font-medium px-4 py-2 text-sm transition-all hover:bg-accent/90 disabled:opacity-50"
+          >
             {loading ? <RefreshCw size={15} className="animate-spin" /> : <Play size={15} />}
             Run Simulation
-          </Button>
+          </button>
         </div>
       </Card>
 
@@ -230,13 +221,13 @@ export default function SimulatorPage() {
             <Card className="p-4">
               <div className="text-xs text-muted">Pre-Shock Baseline Tone</div>
               <div className="mt-1 text-2xl font-bold font-mono">
-                {result.metrics.initial_tone > 0 ? `+${result.metrics.initial_tone}` : result.metrics.initial_tone}
+                {fmtSigned(result.metrics.initial_tone)}
               </div>
             </Card>
             <Card className="p-4 border-rose-500/30 bg-rose-500/5">
               <div className="text-xs text-rose-400 font-medium">Peak Sentiment Drawdown</div>
               <div className="mt-1 text-2xl font-bold font-mono text-rose-500">
-                {result.metrics.peak_delta > 0 ? `+${result.metrics.peak_delta}` : result.metrics.peak_delta} pts
+                {fmtSigned(result.metrics.peak_delta)} pts
               </div>
             </Card>
             <Card className="p-4">
@@ -261,12 +252,12 @@ export default function SimulatorPage() {
                   <h3 className="font-semibold text-sm">Counterfactual Trajectory vs Baseline</h3>
                   <div className="text-xs text-muted">{result.event.label} ({result.event.magnitude}x) on {result.topic.label}</div>
                 </div>
-                <Badge tone={result.metrics.peak_delta < -3 ? "danger" : "warning"}>
+                <Badge tone={result.metrics.peak_delta < -3 ? "negative" : "warning"}>
                   {result.metrics.severity_assessment}
                 </Badge>
               </div>
               <div className="h-80 w-full">
-                <ReactECharts option={chartOption} style={{ height: "100%", width: "100%" }} />
+                <EChart height={300} option={chartOption} />
               </div>
             </Card>
 

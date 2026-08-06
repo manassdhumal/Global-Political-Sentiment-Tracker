@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from typing import Any
+from datetime import date
 import numpy as np
 import pandas as pd
 
 from src.topics.catalog import load_catalog
-from src.topics.synth import topic_weekly
-from src.analytics.correlation import compute_pairwise_correlation
+from src.topics.synth import global_weekly
 
 
 CATEGORY_CLUSTERS: dict[str, dict[str, Any]] = {
@@ -38,13 +38,14 @@ def build_ideological_network(min_correlation: float = 0.25, max_nodes: int = 30
     """Generate force-directed graph nodes and correlation edges for political entities."""
     catalog = load_catalog()
     topics = catalog.all_topics()[:max_nodes]
+    today = date.today()
 
     # 1. Build nodes and collect time series
     nodes = []
     series_map: dict[str, pd.Series] = {}
 
     for t in topics:
-        df = topic_weekly(t.id)
+        df = global_weekly(t.id, end=today)
         if df.empty or len(df) < 5:
             continue
 
@@ -69,7 +70,7 @@ def build_ideological_network(min_correlation: float = 0.25, max_nodes: int = 30
             "itemStyle": {"color": cluster["color"]},
         })
 
-        series_map[t.label] = df.set_index("date")["avg_tone"]
+        series_map[t.label] = df.set_index("week_start")["avg_tone"]
 
     # 2. Build aligned dataframe & compute pairwise correlations
     links = []
