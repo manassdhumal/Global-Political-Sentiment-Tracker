@@ -37,6 +37,8 @@ from api.routers import (
     polarization,
     analyst,
     live,
+    watchlists,
+    multilingual,
 )
 
 app = FastAPI(
@@ -79,6 +81,8 @@ app.include_router(markets.router)
 app.include_router(polarization.router)
 app.include_router(analyst.router)
 app.include_router(live.router)
+app.include_router(watchlists.router)
+app.include_router(multilingual.router)
 
 
 @app.get("/health", tags=["meta"])

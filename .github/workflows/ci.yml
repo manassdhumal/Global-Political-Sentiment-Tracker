@@ -1,4 +1,4 @@
-name: CI
+name: CI Pipeline
 
 on:
   push:
@@ -7,37 +7,49 @@ on:
     branches: [main]
 
 jobs:
-  backend:
-    name: Backend tests
+  # --- Backend Test & Lint Job ---
+  backend-tests:
+    name: Backend Tests (Python 3.13)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install dependencies
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-api.txt pytest
-      - name: Run tests
-        run: pytest -q
+          pip install -r requirements.txt
 
-  frontend:
-    name: Frontend typecheck + build
+      - name: Run Test Suite
+        run: |
+          pytest -v
+
+  # --- Frontend Build & Typecheck Job ---
+  frontend-build:
+    name: Frontend Build & Typecheck (Node 20)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npx tsc --noEmit -p tsconfig.json
-      - run: npx next build
-        env:
-          NEXT_PUBLIC_API_BASE: http://localhost:8000
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Next.js Production Bundle
+        run: npm run build

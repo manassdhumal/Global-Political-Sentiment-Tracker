@@ -20,11 +20,14 @@ import {
   Radio,
   Menu,
   X,
+  Bookmark,
+  Languages,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useConfig } from "./config-context";
 import { cx, Badge } from "./ui";
 import { api } from "@/lib/api";
+import { NotificationBell } from "./notification-bell";
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
 const NAV: { section: string; items: Item[] }[] = [
@@ -32,11 +35,13 @@ const NAV: { section: string; items: Item[] }[] = [
     { href: "/", label: "Trending", icon: TrendingUp },
     { href: "/map", label: "World Map & Hotspots", icon: Globe },
     { href: "/topics", label: "Browse topics", icon: LayoutGrid },
+    { href: "/watchlists", label: "Custom Portfolios", icon: Bookmark },
     { href: "/topic", label: "Analyze a topic", icon: Search },
     { href: "/compare", label: "Compare topics", icon: GitCompareArrows },
   ]},
   { section: "Applied Analytics & AI", items: [
     { href: "/analyst", label: "AI Geopolitical Analyst", icon: Bot },
+    { href: "/multilingual", label: "Cross-Cultural Framing", icon: Languages },
     { href: "/timeseries", label: "Applied Econometrics", icon: Activity },
     { href: "/markets", label: "Financial Spillover", icon: DollarSign },
     { href: "/polarization", label: "Media Polarization", icon: Newspaper },
@@ -127,9 +132,12 @@ function LiveTickerBar() {
           <strong className="text-accent">{pulse.topic}</strong> ({pulse.outlet}): {pulse.headline}
         </span>
       </div>
-      <div className="hidden sm:flex items-center gap-3 shrink-0 text-[11px] font-mono">
-        <span className="text-muted">Net: <strong className={pulse.tone >= 0 ? "text-emerald-400" : "text-rose-400"}>{pulse.tone > 0 ? "+" : ""}{pulse.tone}</strong></span>
-        <span className="text-muted">Velocity: <strong className="text-foreground">{pulse.velocity}</strong></span>
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="hidden sm:flex items-center gap-3 text-[11px] font-mono">
+          <span className="text-muted">Net: <strong className={pulse.tone >= 0 ? "text-emerald-400" : "text-rose-400"}>{pulse.tone > 0 ? "+" : ""}{pulse.tone}</strong></span>
+          <span className="text-muted">Velocity: <strong className="text-foreground">{pulse.velocity}</strong></span>
+        </div>
+        <NotificationBell />
       </div>
     </div>
   );

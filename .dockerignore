@@ -1,17 +1,24 @@
-frontend/
-tests/
-data/
-.git/
-.venv/
-venv/
+# Git & IDE
+.git
+.github
+.agents
+.gemini
+.vscode
+.idea
+
+# Python
 __pycache__/
-**/__pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
-.claude/
+.coverage
+htmlcov/
 .env
-*.db
-*.sqlite
-README.md
-DEPLOY.md
-src/dashboard/
+.env.local
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+*.log
