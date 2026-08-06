@@ -83,7 +83,9 @@ def _ramp(n: int) -> np.ndarray:
     return r
 
 
-def global_weekly(query: str, end: date) -> pd.DataFrame:
+def global_weekly(query: str, end: date | None = None) -> pd.DataFrame:
+    if end is None:
+        end = date.today()
     meta = topic_meta(query, end)
     weeks = _weeks(meta, end)
     n = len(weeks)
@@ -96,7 +98,11 @@ def global_weekly(query: str, end: date) -> pd.DataFrame:
                          "article_volume": vol})
 
 
-def by_country_weekly(query: str, end: date, countries: list[str]) -> pd.DataFrame:
+def by_country_weekly(query: str, end: date | None = None, countries: list[str] | None = None) -> pd.DataFrame:
+    if end is None:
+        end = date.today()
+    if countries is None:
+        countries = ["US", "UK", "IN", "GM", "FR", "CH"]
     meta = topic_meta(query, end)
     weeks = _weeks(meta, end)
     n = len(weeks)
@@ -119,7 +125,9 @@ def by_country_weekly(query: str, end: date, countries: list[str]) -> pd.DataFra
     return df
 
 
-def opinion_weekly(query: str, end: date) -> pd.DataFrame:
+def opinion_weekly(query: str, end: date | None = None) -> pd.DataFrame:
+    if end is None:
+        end = date.today()
     meta = topic_meta(query, end)
     weeks = _weeks(meta, end)
     n = len(weeks)
