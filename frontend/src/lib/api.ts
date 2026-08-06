@@ -56,6 +56,129 @@ export function briefingUrl(topic: string, format: "markdown" | "html" | "pdf" =
   return url.toString();
 }
 
+// ---- New Intelligence APIs ----
+
+export interface WorldCountrySentiment {
+  iso3: string;
+  gdelt: string;
+  name: string;
+  flag: string;
+  groups: string[];
+  leaders: string[];
+  latest_tone: number;
+  public_sentiment: number;
+  gap: number;
+  movement: number;
+  volume: number;
+  is_hotspot: boolean;
+  status_label: string;
+  spark: number[];
+}
+
+export interface WorldMapData {
+  region: string;
+  summary: {
+    country_count: number;
+    hotspot_count: number;
+    global_avg_tone: number;
+    total_articles: number;
+  };
+  countries: WorldCountrySentiment[];
+}
+
+export interface SimulationResult {
+  topic: { id: string; label: string; category: string };
+  event: {
+    type: string;
+    label: string;
+    magnitude: number;
+    description: string;
+    category: string;
+  };
+  metrics: {
+    initial_tone: number;
+    peak_delta: number;
+    max_divergence_gap: number;
+    recovery_weeks: number;
+    volume_surge_pct: number;
+    severity_assessment: string;
+  };
+  simulation: {
+    dates: string[];
+    baseline_media: number[];
+    baseline_public: number[];
+    shocked_media: number[];
+    shocked_public: number[];
+    shocked_upper: number[];
+    shocked_lower: number[];
+  };
+}
+
+export interface NetworkGraphData {
+  nodes: {
+    id: string;
+    name: string;
+    category: string;
+    latest_tone: number;
+    volume: number;
+    symbolSize: number;
+    cluster_id: number;
+    cluster_name: string;
+    itemStyle: { color: string };
+  }[];
+  links: {
+    source: string;
+    target: string;
+    source_label: string;
+    target_label: string;
+    value: number;
+    weight: number;
+    relationship: string;
+    lineStyle: {
+      width: number;
+      color: string;
+      opacity: number;
+      type: string;
+    };
+  }[];
+  clusters: { id: number; name: string; color: string }[];
+  summary: {
+    node_count: number;
+    link_count: number;
+    min_correlation_threshold: number;
+  };
+}
+
+export interface PollingComparisonData {
+  entity: {
+    id: string;
+    label: string;
+    title: string;
+    country: string;
+    flag: string;
+    pollsters: string[];
+  };
+  latest: {
+    approval_pct: number;
+    disapproval_pct: number;
+    net_approval: number;
+    media_tone: number;
+    media_bias_index: number;
+    correlation_r: number;
+    verdict: string;
+    verdict_code: string;
+  };
+  series: {
+    date: string;
+    approval_pct: number;
+    disapproval_pct: number;
+    net_approval: number;
+    media_tone: number;
+    bias_gap: number;
+    pollster: string;
+  }[];
+}
+
 // ---- Shared config types ----
 export interface Country { gdelt: string; iso3: string; name: string; }
 export interface Entity {

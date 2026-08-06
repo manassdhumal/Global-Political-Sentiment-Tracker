@@ -3,18 +3,36 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TrendingUp, LayoutGrid, Search, GitCompareArrows, BookOpen, Menu, X } from "lucide-react";
+import {
+  TrendingUp,
+  LayoutGrid,
+  Search,
+  GitCompareArrows,
+  BookOpen,
+  Globe,
+  SlidersHorizontal,
+  Share2,
+  Vote,
+  Menu,
+  X,
+} from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useConfig } from "./config-context";
 import { cx, Badge } from "./ui";
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
 const NAV: { section: string; items: Item[] }[] = [
-  { section: "", items: [
+  { section: "Core Intelligence", items: [
     { href: "/", label: "Trending", icon: TrendingUp },
+    { href: "/map", label: "World Map & Hotspots", icon: Globe },
     { href: "/topics", label: "Browse topics", icon: LayoutGrid },
     { href: "/topic", label: "Analyze a topic", icon: Search },
     { href: "/compare", label: "Compare topics", icon: GitCompareArrows },
+  ]},
+  { section: "Advanced Analytics", items: [
+    { href: "/simulator", label: "Policy Simulator", icon: SlidersHorizontal },
+    { href: "/network", label: "Ideological Graph", icon: Share2 },
+    { href: "/polling", label: "Polling vs Media", icon: Vote },
     { href: "/methodology", label: "Methodology", icon: BookOpen },
   ]},
 ];
