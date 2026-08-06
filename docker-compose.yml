@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gpst-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - GPST_TOPIC_SOURCE=${GPST_TOPIC_SOURCE:-synthetic}
+      - GPST_SENTIMENT_BACKEND=${GPST_SENTIMENT_BACKEND:-vader}
+      - GPST_CORS_ORIGINS=${GPST_CORS_ORIGINS:-http://localhost:3000}
+      - GPST_DISCORD_WEBHOOK=${GPST_DISCORD_WEBHOOK:-}
+      - GPST_TELEGRAM_BOT_TOKEN=${GPST_TELEGRAM_BOT_TOKEN:-}
+      - GPST_TELEGRAM_CHAT_ID=${GPST_TELEGRAM_CHAT_ID:-}
+      - GPST_ALERT_WEBHOOK_URL=${GPST_ALERT_WEBHOOK_URL:-}
+    volumes:
+      - gpst-data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_BASE=http://localhost:8000
+    container_name: gpst-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  gpst-data:

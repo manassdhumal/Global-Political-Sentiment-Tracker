@@ -49,6 +49,28 @@ def get_alerts(threshold: float = Query(2.0, ge=0.0, le=50.0)) -> dict:
     return {"threshold": threshold, "count": len(hits), "alerts": hits}
 
 
+@router.get("/alerts/live")
+def get_live_alerts(threshold: float = Query(2.5, ge=0.5, le=50.0)) -> dict:
+    """Multi-signal sentiment shocks, divergence spikes, and attention surges."""
+    from src.alerts.detector import scan_catalog_alerts
+    alerts = scan_catalog_alerts(threshold=threshold)
+    return {
+        "threshold": threshold,
+        "count": len(alerts),
+        "alerts": [a.to_dict() for a in alerts],
+    }
+
+
+@router.post("/alerts/trigger-webhook")
+def trigger_alert_webhook(threshold: float = Query(2.5, ge=0.5, le=50.0)) -> dict:
+    """Scan and dispatch detected alerts to all configured webhooks."""
+    from src.alerts.detector import scan_catalog_alerts
+    from src.alerts.notifiers import dispatch_all_alerts
+    alerts = scan_catalog_alerts(threshold=threshold)
+    summary = dispatch_all_alerts(alerts)
+    return summary
+
+
 @router.get("/compare-topics")
 def compare_topics(topics: str = Query(..., description="comma-separated slugs/queries")) -> dict:
     """Overlay media + public sentiment series for up to 5 topics."""
@@ -61,9 +83,25 @@ def compare_topics(topics: str = Query(..., description="comma-separated slugs/q
         out.append({
             "id": a["topic"]["id"], "label": a["topic"]["label"],
             "media_series": a["media_series"], "opinion_series": a["opinion_series"],
+            "attention_series": a.get("attention_series", []),
             "avg_media": a["avg_media"], "avg_public": a["avg_public"], "avg_gap": a["avg_gap"],
         })
     return {"topics": out}
+
+
+@router.get("/topics/correlation")
+def get_topics_correlation(
+    topics: str = Query(..., description="comma-separated slugs/queries"),
+    metric: str = Query("media", pattern="^(media|public|gap|attention)$"),
+) -> dict:
+    """Compute statistical correlation matrix and lead-lag analysis for given topics."""
+    from src.analytics.correlation import analyze_topic_correlations
+    ids = [t.strip() for t in topics.split(",") if t.strip()][:8]
+    if len(ids) < 2:
+        raise HTTPException(400, "Provide at least two topics for correlation.")
+    
+    t_analyses = [analyze_topic(q) for q in ids]
+    return analyze_topic_correlations(t_analyses, metric=metric)
 
 
 @router.get("/topic")

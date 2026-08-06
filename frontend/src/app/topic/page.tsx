@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { EChartsCoreOption } from "echarts";
 import * as echarts from "echarts";
 import { useApi } from "@/lib/useApi";
+import { briefingUrl } from "@/lib/api";
 import { EChart, useChartTheme } from "@/components/echart";
 import { lineTimeSeries, horizontalBar } from "@/components/charts";
 import { Card, PageHeader, StatTile, Spinner, EmptyState, Badge, DetailSkeleton, DISCLAIMER } from "@/components/ui";
@@ -168,11 +169,30 @@ function TopicInner() {
 
       {data && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold">{data.topic.label}</h2>
-            <Badge tone="accent">{data.topic.category}</Badge>
-            {data.topic.custom && <Badge tone="warning">custom</Badge>}
-            <span className="text-xs text-muted">· tracked since {data.inception} ({data.age_weeks} weeks of history)</span>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-semibold">{data.topic.label}</h2>
+              <Badge tone="accent">{data.topic.category}</Badge>
+              {data.topic.custom && <Badge tone="warning">custom</Badge>}
+              <span className="text-xs text-muted">· tracked since {data.inception} ({data.age_weeks} weeks of history)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={briefingUrl(data.topic.query, "markdown")}
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-accent/50 hover:bg-card2"
+              >
+                📄 Export Briefing (.md)
+              </a>
+              <a
+                href={briefingUrl(data.topic.query, "html")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+              >
+                🛡️ View Intelligence Briefing
+              </a>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
             <Badge tone="positive">attention: {data.stats.source_attention || "wikipedia"}</Badge>

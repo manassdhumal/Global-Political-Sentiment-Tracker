@@ -107,3 +107,21 @@ def report(scope: str, id: str, w0: str | None = None, w1: str | None = None,
     return Response(
         content=to_markdown(summary), media_type="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="{fname}.md"'})
+
+
+@router.get("/briefing")
+def get_briefing(
+    topic: str = Query(..., min_length=1, max_length=120),
+    format: str = Query("markdown", pattern="^(markdown|html|pdf)$"),
+) -> Response:
+    """Export an executive-level geopolitical intelligence briefing for any topic."""
+    from src.reporting.briefing import generate_topic_briefing
+    try:
+        content, media_type, filename = generate_topic_briefing(topic, format=format)
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as exc:
+        raise HTTPException(400, f"Failed to generate intelligence briefing: {exc}")

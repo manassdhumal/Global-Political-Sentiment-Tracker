@@ -1,0 +1,37 @@
+name: Scheduled Ingestion & Trending Snapshot
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  snapshot:
+    name: Precompute Daily Trending & Live Diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-api.txt pytest
+
+      - name: Verify Live Data Connectors
+        run: python scripts/check_sources.py
+
+      - name: Precompute Trending Snapshot
+        run: python scripts/precompute_trending.py --source auto
+
+      - name: Scan & Dispatch Sentiment Shock Alerts
+        run: python scripts/run_alerts.py --threshold 2.5
+        env:
+          GPST_DISCORD_WEBHOOK: ${{ secrets.GPST_DISCORD_WEBHOOK }}
+          GPST_TELEGRAM_BOT_TOKEN: ${{ secrets.GPST_TELEGRAM_BOT_TOKEN }}
+          GPST_TELEGRAM_CHAT_ID: ${{ secrets.GPST_TELEGRAM_CHAT_ID }}

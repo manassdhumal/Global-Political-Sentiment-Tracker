@@ -17,3 +17,5 @@ from .impact import event_impact, ImpactResult  # noqa: F401
 from .framing import domestic_vs_foreign, by_language  # noqa: F401
 from .compare import (  # noqa: F401
     media_vs_public, media_weekly, public_weekly, divergence_summary)
+from .correlation import (  # noqa: F401
+    compute_pairwise_correlation, compute_lead_lag, analyze_topic_correlations)

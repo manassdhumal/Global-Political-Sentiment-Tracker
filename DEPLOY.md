@@ -61,5 +61,12 @@ Back on Render, set **`GPST_CORS_ORIGINS`** to your Vercel URL
   (Render free tier), set **`GPST_REDIS_URL`** on both so they share the cache
   via Redis (e.g. Render's free Key Value / Upstash). Without it, the API just
   computes trending on the fly.
+- **Docker Compose (1-Command Full-Stack Run).**
+  You can run both backend and frontend locally or on a VPS with a single command:
+  ```bash
+  docker compose up --build
+  ```
+  This starts the FastAPI API on `http://localhost:8000` and the Next.js UI on `http://localhost:3000`.
+
 - **Other hosts.** The same `Dockerfile` works on Railway, Fly.io, Google Cloud
   Run, etc. — just set the env vars and expose `$PORT`.

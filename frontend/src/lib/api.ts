@@ -49,6 +49,13 @@ export function reportUrl(p: {
   return url.toString();
 }
 
+export function briefingUrl(topic: string, format: "markdown" | "html" | "pdf" = "markdown"): string {
+  const url = new URL("/api/briefing", API_BASE);
+  url.searchParams.set("topic", topic);
+  url.searchParams.set("format", format);
+  return url.toString();
+}
+
 // ---- Shared config types ----
 export interface Country { gdelt: string; iso3: string; name: string; }
 export interface Entity {
