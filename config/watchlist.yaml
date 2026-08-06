@@ -13,107 +13,107 @@ meta:
 # ---------------------------------------------------------------------
 countries:
   # North America
-  - {name: United States,   gdelt: US, iso3: USA}
-  - {name: Canada,          gdelt: CA, iso3: CAN}
-  - {name: Mexico,          gdelt: MX, iso3: MEX}
+  - {name: "United States",   gdelt: "US", iso3: "USA"}
+  - {name: "Canada",          gdelt: "CA", iso3: "CAN"}
+  - {name: "Mexico",          gdelt: "MX", iso3: "MEX"}
 
   # Latin America & Caribbean
-  - {name: Brazil,          gdelt: BR, iso3: BRA}
-  - {name: Argentina,       gdelt: AR, iso3: ARG}
-  - {name: Colombia,        gdelt: CO, iso3: COL}
-  - {name: Chile,           gdelt: CI, iso3: CHL}
-  - {name: Peru,            gdelt: PE, iso3: PER}
-  - {name: Venezuela,       gdelt: VE, iso3: VEN}
-  - {name: El Salvador,     gdelt: ES, iso3: SLV}
+  - {name: "Brazil",          gdelt: "BR", iso3: "BRA"}
+  - {name: "Argentina",       gdelt: "AR", iso3: "ARG"}
+  - {name: "Colombia",        gdelt: "CO", iso3: "COL"}
+  - {name: "Chile",           gdelt: "CI", iso3: "CHL"}
+  - {name: "Peru",            gdelt: "PE", iso3: "PER"}
+  - {name: "Venezuela",       gdelt: "VE", iso3: "VEN"}
+  - {name: "El Salvador",     gdelt: "ES", iso3: "SLV"}
 
   # Western & Northern Europe
-  - {name: United Kingdom,  gdelt: UK, iso3: GBR}
-  - {name: Germany,         gdelt: GM, iso3: DEU}
-  - {name: France,          gdelt: FR, iso3: FRA}
-  - {name: Italy,           gdelt: IT, iso3: ITA}
-  - {name: Spain,           gdelt: SP, iso3: ESP}
-  - {name: Netherlands,     gdelt: NL, iso3: NLD}
-  - {name: Belgium,         gdelt: BE, iso3: BEL}
-  - {name: Sweden,          gdelt: SW, iso3: SWE}
-  - {name: Norway,          gdelt: NO, iso3: NOR}
-  - {name: Denmark,         gdelt: DA, iso3: DNK}
-  - {name: Switzerland,     gdelt: SZ, iso3: CHE}
-  - {name: Ireland,         gdelt: EI, iso3: IRL}
+  - {name: "United Kingdom",  gdelt: "UK", iso3: "GBR"}
+  - {name: "Germany",         gdelt: "GM", iso3: "DEU"}
+  - {name: "France",          gdelt: "FR", iso3: "FRA"}
+  - {name: "Italy",           gdelt: "IT", iso3: "ITA"}
+  - {name: "Spain",           gdelt: "SP", iso3: "ESP"}
+  - {name: "Netherlands",     gdelt: "NL", iso3: "NLD"}
+  - {name: "Belgium",         gdelt: "BE", iso3: "BEL"}
+  - {name: "Sweden",          gdelt: "SW", iso3: "SWE"}
+  - {name: "Norway",          gdelt: "NO", iso3: "NOR"}
+  - {name: "Denmark",         gdelt: "DA", iso3: "DNK"}
+  - {name: "Switzerland",     gdelt: "SZ", iso3: "CHE"}
+  - {name: "Ireland",         gdelt: "EI", iso3: "IRL"}
 
   # Central & Eastern Europe
-  - {name: Poland,          gdelt: PL, iso3: POL}
-  - {name: Ukraine,         gdelt: UP, iso3: UKR}
-  - {name: Russia,          gdelt: RS, iso3: RUS}
-  - {name: Hungary,         gdelt: HU, iso3: HUN}
-  - {name: Czech Republic,  gdelt: EZ, iso3: CZE}
-  - {name: Romania,         gdelt: RO, iso3: ROU}
-  - {name: Greece,          gdelt: GR, iso3: GRC}
-  - {name: Turkey,          gdelt: TU, iso3: TUR}
+  - {name: "Poland",          gdelt: "PL", iso3: "POL"}
+  - {name: "Ukraine",         gdelt: "UP", iso3: "UKR"}
+  - {name: "Russia",          gdelt: "RS", iso3: "RUS"}
+  - {name: "Hungary",         gdelt: "HU", iso3: "HUN"}
+  - {name: "Czech Republic",  gdelt: "EZ", iso3: "CZE"}
+  - {name: "Romania",         gdelt: "RO", iso3: "ROU"}
+  - {name: "Greece",          gdelt: "GR", iso3: "GRC"}
+  - {name: "Turkey",          gdelt: "TU", iso3: "TUR"}
 
   # Asia-Pacific
-  - {name: China,           gdelt: CH, iso3: CHN}
-  - {name: India,           gdelt: IN, iso3: IND}
-  - {name: Japan,           gdelt: JA, iso3: JPN}
-  - {name: South Korea,     gdelt: KS, iso3: KOR}
-  - {name: Taiwan,          gdelt: TW, iso3: TWN}
-  - {name: Indonesia,       gdelt: ID, iso3: IDN}
-  - {name: Australia,       gdelt: AS, iso3: AUS}
-  - {name: New Zealand,     gdelt: NZ, iso3: NZL}
-  - {name: Philippines,     gdelt: RP, iso3: PHL}
-  - {name: Vietnam,         gdelt: VM, iso3: VNM}
-  - {name: Pakistan,        gdelt: PK, iso3: PAK}
-  - {name: Bangladesh,      gdelt: BG, iso3: BGD}
+  - {name: "China",           gdelt: "CH", iso3: "CHN"}
+  - {name: "India",           gdelt: "IN", iso3: "IND"}
+  - {name: "Japan",           gdelt: "JA", iso3: "JPN"}
+  - {name: "South Korea",     gdelt: "KS", iso3: "KOR"}
+  - {name: "Taiwan",          gdelt: "TW", iso3: "TWN"}
+  - {name: "Indonesia",       gdelt: "ID", iso3: "IDN"}
+  - {name: "Australia",       gdelt: "AS", iso3: "AUS"}
+  - {name: "New Zealand",     gdelt: "NZ", iso3: "NZL"}
+  - {name: "Philippines",     gdelt: "RP", iso3: "PHL"}
+  - {name: "Vietnam",         gdelt: "VM", iso3: "VNM"}
+  - {name: "Pakistan",        gdelt: "PK", iso3: "PAK"}
+  - {name: "Bangladesh",      gdelt: "BG", iso3: "BGD"}
 
   # Middle East & North Africa
-  - {name: Israel,          gdelt: IS, iso3: ISR}
-  - {name: Saudi Arabia,    gdelt: SA, iso3: SAU}
-  - {name: United Arab Emirates, gdelt: AE, iso3: ARE}
-  - {name: Iran,            gdelt: IR, iso3: IRN}
-  - {name: Qatar,           gdelt: QA, iso3: QAT}
-  - {name: Egypt,           gdelt: EG, iso3: EGY}
+  - {name: "Israel",          gdelt: "IS", iso3: "ISR"}
+  - {name: "Saudi Arabia",    gdelt: "SA", iso3: "SAU"}
+  - {name: "United Arab Emirates", gdelt: "AE", iso3: "ARE"}
+  - {name: "Iran",            gdelt: "IR", iso3: "IRN"}
+  - {name: "Qatar",           gdelt: "QA", iso3: "QAT"}
+  - {name: "Egypt",           gdelt: "EG", iso3: "EGY"}
 
   # Sub-Saharan Africa
-  - {name: South Africa,    gdelt: SF, iso3: ZAF}
-  - {name: Nigeria,         gdelt: NI, iso3: NGA}
-  - {name: Kenya,           gdelt: KE, iso3: KEN}
-  - {name: Ethiopia,        gdelt: ET, iso3: ETH}
-  - {name: Morocco,         gdelt: MO, iso3: MAR}
+  - {name: "South Africa",    gdelt: "SF", iso3: "ZAF"}
+  - {name: "Nigeria",         gdelt: "NI", iso3: "NGA"}
+  - {name: "Kenya",           gdelt: "KE", iso3: "KEN"}
+  - {name: "Ethiopia",        gdelt: "ET", iso3: "ETH"}
+  - {name: "Morocco",         gdelt: "MO", iso3: "MAR"}
 
 # ---------------------------------------------------------------------
 # Tracked Entities: Mix of political FIGURES, PARTIES, and THEMES.
 # ---------------------------------------------------------------------
 entities:
   # --- Figures ---
-  - {id: donald_trump,       name: Donald Trump,                  type: figure, home_country: US, query: '"Donald Trump"',         aliases: [Trump]}
-  - {id: joe_biden,          name: Joe Biden,                     type: figure, home_country: US, query: '"Joe Biden"',            aliases: [Biden]}
-  - {id: kamala_harris,      name: Kamala Harris,                 type: figure, home_country: US, query: '"Kamala Harris"',         aliases: [Harris]}
-  - {id: keir_starmer,       name: Keir Starmer,                  type: figure, home_country: UK, query: '"Keir Starmer"',         aliases: [Starmer]}
-  - {id: justin_trudeau,     name: Justin Trudeau,                type: figure, home_country: CA, query: '"Justin Trudeau"',       aliases: [Trudeau]}
-  - {id: emmanuel_macron,    name: Emmanuel Macron,               type: figure, home_country: FR, query: '"Emmanuel Macron"',      aliases: [Macron]}
-  - {id: olaf_scholz,        name: Olaf Scholz,                   type: figure, home_country: GM, query: '"Olaf Scholz"',          aliases: [Scholz]}
-  - {id: giorgia_meloni,     name: Giorgia Meloni,                type: figure, home_country: IT, query: '"Giorgia Meloni"',       aliases: [Meloni]}
-  - {id: vladimir_putin,     name: Vladimir Putin,                type: figure, home_country: RS, query: '"Vladimir Putin"',       aliases: [Putin]}
-  - {id: volodymyr_zelensky, name: Volodymyr Zelensky,            type: figure, home_country: UP, query: '(Zelensky OR Zelenskyy)', aliases: [Zelenskyy]}
-  - {id: narendra_modi,      name: Narendra Modi,                 type: figure, home_country: IN, query: '"Narendra Modi"',        aliases: [Modi]}
-  - {id: xi_jinping,         name: Xi Jinping,                    type: figure, home_country: CH, query: '"Xi Jinping"',           aliases: [Xi]}
-  - {id: benjamin_netanyahu, name: Benjamin Netanyahu,            type: figure, home_country: IS, query: '(Netanyahu OR Netanyahu)', aliases: [Netanyahu]}
-  - {id: mbs,                name: Mohammed bin Salman (MBS),     type: figure, home_country: SA, query: '"Mohammed bin Salman"',   aliases: [MBS]}
-  - {id: lula,               name: Luiz Inácio Lula da Silva,     type: figure, home_country: BR, query: '(Lula OR "Lula da Silva")', aliases: [Lula]}
-  - {id: javier_milei,       name: Javier Milei,                  type: figure, home_country: AR, query: '"Javier Milei"',         aliases: [Milei]}
+  - {id: donald_trump,       name: "Donald Trump",                  type: figure, home_country: "US", query: '"Donald Trump"',         aliases: [Trump]}
+  - {id: joe_biden,          name: "Joe Biden",                     type: figure, home_country: "US", query: '"Joe Biden"',            aliases: [Biden]}
+  - {id: kamala_harris,      name: "Kamala Harris",                 type: figure, home_country: "US", query: '"Kamala Harris"',         aliases: [Harris]}
+  - {id: keir_starmer,       name: "Keir Starmer",                  type: figure, home_country: "UK", query: '"Keir Starmer"',         aliases: [Starmer]}
+  - {id: justin_trudeau,     name: "Justin Trudeau",                type: figure, home_country: "CA", query: '"Justin Trudeau"',       aliases: [Trudeau]}
+  - {id: emmanuel_macron,    name: "Emmanuel Macron",               type: figure, home_country: "FR", query: '"Emmanuel Macron"',      aliases: [Macron]}
+  - {id: olaf_scholz,        name: "Olaf Scholz",                   type: figure, home_country: "GM", query: '"Olaf Scholz"',          aliases: [Scholz]}
+  - {id: giorgia_meloni,     name: "Giorgia Meloni",                type: figure, home_country: "IT", query: '"Giorgia Meloni"',       aliases: [Meloni]}
+  - {id: vladimir_putin,     name: "Vladimir Putin",                type: figure, home_country: "RS", query: '"Vladimir Putin"',       aliases: [Putin]}
+  - {id: volodymyr_zelensky, name: "Volodymyr Zelensky",            type: figure, home_country: "UP", query: '(Zelensky OR Zelenskyy)', aliases: [Zelenskyy]}
+  - {id: narendra_modi,      name: "Narendra Modi",                 type: figure, home_country: "IN", query: '"Narendra Modi"',        aliases: [Modi]}
+  - {id: xi_jinping,         name: "Xi Jinping",                    type: figure, home_country: "CH", query: '"Xi Jinping"',           aliases: [Xi]}
+  - {id: benjamin_netanyahu, name: "Benjamin Netanyahu",            type: figure, home_country: "IS", query: '(Netanyahu OR Netanyahu)', aliases: [Netanyahu]}
+  - {id: mbs,                name: "Mohammed bin Salman (MBS)",     type: figure, home_country: "SA", query: '"Mohammed bin Salman"',   aliases: [MBS]}
+  - {id: lula,               name: "Luiz Inácio Lula da Silva",     type: figure, home_country: "BR", query: '(Lula OR "Lula da Silva")', aliases: [Lula]}
+  - {id: javier_milei,       name: "Javier Milei",                  type: figure, home_country: "AR", query: '"Javier Milei"',         aliases: [Milei]}
 
   # --- Parties ---
-  - {id: us_democrats,       name: Democratic Party (US),         type: party,  home_country: US, query: '(Democrats OR "Democratic Party")', aliases: [DNC]}
-  - {id: us_republicans,     name: Republican Party (US),         type: party,  home_country: US, query: '(Republicans OR GOP)',  aliases: [GOP]}
-  - {id: uk_labour,          name: Labour Party (UK),             type: party,  home_country: UK, query: '"Labour Party"',         aliases: [Labour]}
-  - {id: uk_conservatives,   name: Conservative Party (UK),       type: party,  home_country: UK, query: '"Conservative Party"',   aliases: [Tories]}
-  - {id: bjp,                name: Bharatiya Janata Party (BJP),  type: party,  home_country: IN, query: '(BJP OR "Bharatiya Janata Party")', aliases: [BJP]}
-  - {id: inc,                name: Indian National Congress (INC), type: party, home_country: IN, query: '"Indian National Congress"', aliases: [Congress]}
+  - {id: us_democrats,       name: "Democratic Party (US)",         type: party,  home_country: "US", query: '(Democrats OR "Democratic Party")', aliases: [DNC]}
+  - {id: us_republicans,     name: "Republican Party (US)",         type: party,  home_country: "US", query: '(Republicans OR GOP)',  aliases: [GOP]}
+  - {id: uk_labour,          name: "Labour Party (UK)",             type: party,  home_country: "UK", query: '"Labour Party"',         aliases: [Labour]}
+  - {id: uk_conservatives,   name: "Conservative Party (UK)",       type: party,  home_country: "UK", query: '"Conservative Party"',   aliases: [Tories]}
+  - {id: bjp,                name: "Bharatiya Janata Party (BJP)",  type: party,  home_country: "IN", query: '(BJP OR "Bharatiya Janata Party")', aliases: [BJP]}
+  - {id: inc,                name: "Indian National Congress (INC)", type: party, home_country: "IN", query: '"Indian National Congress"', aliases: [Congress]}
 
   # --- Themes ---
-  - {id: inflation,          name: Inflation & cost of living,    type: theme,  home_country: null, query: '(inflation OR "cost of living")', aliases: ["cost of living", prices]}
-  - {id: immigration,        name: Immigration,                   type: theme,  home_country: null, query: '(immigration OR migrants OR "asylum seekers")', aliases: [migration, migrants]}
-  - {id: climate_policy,     name: Climate policy,                type: theme,  home_country: null, query: '("climate change" OR "climate policy" OR "net zero")', aliases: ["climate change", "net zero"]}
-  - {id: trade_tariffs,      name: Trade & tariffs,               type: theme,  home_country: null, query: '(tariffs OR "trade war")', aliases: [tariffs, "trade war"]}
-  - {id: ai_regulation,      name: AI regulation,                 type: theme,  home_country: null, query: '("artificial intelligence" OR "AI regulation")', aliases: [AI, "artificial intelligence"]}
-  - {id: healthcare,         name: Healthcare,                    type: theme,  home_country: null, query: '(healthcare OR "health care" OR hospitals)', aliases: ["health care"]}
-  - {id: corruption,         name: Corruption,                    type: theme,  home_country: null, query: '(corruption OR bribery OR "graft scandal")', aliases: [bribery, graft]}
+  - {id: inflation,          name: "Inflation & cost of living",    type: theme,  home_country: null, query: '(inflation OR "cost of living")', aliases: ["cost of living", prices]}
+  - {id: immigration,        name: "Immigration",                   type: theme,  home_country: null, query: '(immigration OR migrants OR "asylum seekers")', aliases: [migration, migrants]}
+  - {id: climate_policy,     name: "Climate policy",                type: theme,  home_country: null, query: '("climate change" OR "climate policy" OR "net zero")', aliases: ["climate change", "net zero"]}
+  - {id: trade_tariffs,      name: "Trade & tariffs",               type: theme,  home_country: null, query: '(tariffs OR "trade war")', aliases: [tariffs, "trade war"]}
+  - {id: ai_regulation,      name: "AI regulation",                 type: theme,  home_country: null, query: '("artificial intelligence" OR "AI regulation")', aliases: [AI, "artificial intelligence"]}
+  - {id: healthcare,         name: "Healthcare",                    type: theme,  home_country: null, query: '(healthcare OR "health care" OR hospitals)', aliases: ["health care"]}
+  - {id: corruption,         name: "Corruption",                    type: theme,  home_country: null, query: '(corruption OR bribery OR "graft scandal")', aliases: [bribery, graft]}

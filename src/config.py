@@ -94,9 +94,10 @@ def load_watchlist(path: str | Path = DEFAULT_CONFIG_PATH) -> Watchlist:
     countries: list[Country] = []
     for i, c in enumerate(raw.get("countries", [])):
         for key in ("name", "gdelt", "iso3"):
-            if not c.get(key):
+            val = c.get(key)
+            if val is None or str(val).strip() == "":
                 raise ValueError(f"countries[{i}] missing required key '{key}'")
-        countries.append(Country(name=c["name"], gdelt=c["gdelt"], iso3=c["iso3"]))
+        countries.append(Country(name=str(c["name"]), gdelt=str(c["gdelt"]), iso3=str(c["iso3"])))
     if not countries:
         raise ValueError("Watchlist must define at least one country.")
 
