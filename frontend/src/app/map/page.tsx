@@ -288,17 +288,17 @@ export default function WorldMapPage() {
                           </div>
                           <div className={cx(
                             "text-[10px] tabular-nums font-medium flex items-center justify-end gap-0.5",
-                            c.weekly_delta >= 0 ? "text-emerald-500" : "text-rose-500"
+                            c.movement >= 0 ? "text-emerald-500" : "text-rose-500"
                           )}>
-                            {c.weekly_delta >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                            {fmtSigned(c.weekly_delta)}
+                            {c.movement >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                            {fmtSigned(c.movement)}
                           </div>
                         </div>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between text-[11px] text-muted border-t border-border/50 pt-2">
-                        <span>Articles: <strong>{c.article_volume.toLocaleString()}</strong></span>
-                        <span>Divergence: <strong>{c.divergence > 0 ? `+${c.divergence}` : c.divergence}</strong></span>
+                        <span>Articles: <strong>{c.volume.toLocaleString()}</strong></span>
+                        <span>Divergence: <strong>{c.gap > 0 ? `+${c.gap}` : c.gap}</strong></span>
                       </div>
                     </div>
                   );
@@ -315,7 +315,7 @@ export default function WorldMapPage() {
                       <span className="text-3xl">{selectedCountry.flag}</span>
                       <div>
                         <h2 className="text-base font-bold leading-tight">{selectedCountry.name}</h2>
-                        <span className="text-xs text-muted font-mono">{selectedCountry.iso3} · {selectedCountry.region.toUpperCase()}</span>
+                        <span className="text-xs text-muted font-mono">{selectedCountry.iso3} · {selectedCountry.groups.join(", ").toUpperCase()}</span>
                       </div>
                     </div>
                     <Badge tone={selectedCountry.is_hotspot ? "negative" : "accent"}>
@@ -346,15 +346,12 @@ export default function WorldMapPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-xs font-bold text-muted uppercase tracking-wider">Top National Narratives</div>
-                    <div className="space-y-1.5">
-                      {selectedCountry.top_topics.map((t, idx) => (
-                        <div key={idx} className="flex items-center justify-between rounded-lg border border-border/50 bg-card2/50 px-2.5 py-1.5 text-xs">
-                          <span className="font-medium text-foreground truncate max-w-[150px]">{t.topic}</span>
-                          <span className="font-mono font-bold" style={{ color: toneColor(t.tone) }}>
-                            {fmtSigned(t.tone)}
-                          </span>
-                        </div>
+                    <div className="text-xs font-bold text-muted uppercase tracking-wider">Key Monitored Leaders</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedCountry.leaders.map((leader, idx) => (
+                        <span key={idx} className="rounded-md border border-border bg-card2 px-2 py-1 text-xs font-medium text-foreground">
+                          {leader}
+                        </span>
                       ))}
                     </div>
                   </div>
