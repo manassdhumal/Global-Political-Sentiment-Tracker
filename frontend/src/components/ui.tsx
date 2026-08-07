@@ -155,7 +155,7 @@ export function MultiSelect({
   );
 }
 
-export function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "accent" | "warning" | "positive" | "negative" }) {
+export function Badge({ children, tone = "muted", className }: { children: React.ReactNode; tone?: "muted" | "accent" | "warning" | "positive" | "negative"; className?: string }) {
   const map: Record<string, string> = {
     muted: "border-border text-muted",
     accent: "border-accent/40 text-accent",
@@ -163,7 +163,7 @@ export function Badge({ children, tone = "muted" }: { children: React.ReactNode;
     positive: "border-positive/40 text-positive",
     negative: "border-negative/40 text-negative",
   };
-  return <span className={cx("inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]", map[tone])}>{children}</span>;
+  return <span className={cx("inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]", map[tone], className)}>{children}</span>;
 }
 
 export function Banner({ children, tone = "warning" }: { children: React.ReactNode; tone?: "warning" | "accent" }) {

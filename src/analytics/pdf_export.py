@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 from fpdf import FPDF
 
-from src.analytics.analyst_agent import generate_geopolitical_dossier
+from src.analytics.analyst_agent import generate_analyst_dossier
 from src.topics.catalog import resolve_topic
 from src.topics.synth import global_weekly
 
@@ -30,7 +30,7 @@ class IntelligenceMemoPDF(FPDF):
 
 def generate_topic_pdf_dossier(topic_id: str = "us_china") -> bytes:
     """Generate a clean, multi-page PDF briefing document for a topic."""
-    dossier = generate_geopolitical_dossier(topic_id)
+    dossier = generate_analyst_dossier(topic_id)
     topic = resolve_topic(topic_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -49,15 +49,15 @@ def generate_topic_pdf_dossier(topic_id: str = "us_china") -> bytes:
     # Memo Meta Table
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(15, 23, 42)
-    pdf.multi_cell(0, 7, f"SPECIAL REPORT: {dossier['topic']['label'].upper()}")
+    pdf.multi_cell(0, 7, f"SPECIAL BRIEFING: {dossier['topic']['label'].upper()}")
     pdf.ln(2)
 
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(70, 80, 95)
-    pdf.cell(45, 5, f"Date: {now_str}", ln=False)
-    pdf.cell(45, 5, f"Category: {topic.category.upper()}", ln=False)
-    pdf.cell(45, 5, f"Threat Tier: {dossier['threat_level'].upper()}", ln=False)
-    pdf.cell(0, 5, f"Confidence: {dossier['confidence_score']}%", ln=True)
+    pdf.cell(50, 5, f"Date: {now_str}", ln=False)
+    pdf.cell(50, 5, f"Category: {topic.category.upper()}", ln=False)
+    pdf.cell(50, 5, f"Net Tone: {dossier['latest_tone']:+.2f}", ln=False)
+    pdf.cell(0, 5, f"Engine: {dossier['source'].upper()}", ln=True)
     pdf.ln(4)
 
     # BLUF Box
@@ -71,35 +71,28 @@ def generate_topic_pdf_dossier(topic_id: str = "us_china") -> bytes:
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(30, 41, 59)
     pdf.set_fill_color(248, 250, 252)
-    bluf_text = f"\n{dossier['executive_summary']}\n\nKey Focus: {dossier['key_catalysts'][0] if dossier['key_catalysts'] else 'Active geopolitical monitoring'}\n"
+    bluf_text = f"\n{dossier['bluf']}\n"
     pdf.multi_cell(0, 5, bluf_text, fill=True, border=1)
     pdf.ln(4)
 
-    # Quantitative Telemetry Table
+    # Causal Drivers Table
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "1. QUANTITATIVE SENTIMENT & VOLATILITY TELEMETRY", ln=True)
+    pdf.cell(0, 6, "1. CAUSAL DRIVERS & MEDIA NARRATIVE PRESSURES", ln=True)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
     pdf.set_draw_color(203, 213, 225)
-    pdf.cell(45, 6, "METRIC", 1, 0, "L", True)
-    pdf.cell(35, 6, "VALUE", 1, 0, "C", True)
-    pdf.cell(110, 6, "ANALYTICAL INTERPRETATION", 1, 1, "L", True)
-
-    metrics_rows = [
-        ("Current Tone", f"{dossier['sentiment_metrics']['tone']:+.2f}", "GDELT media sentiment on a standardized scale (-10 to +10)."),
-        ("4-Week Delta", f"{dossier['sentiment_metrics']['momentum_4w']:+.2f}", "Trailing 4-week acceleration in coverage framing."),
-        ("Volatility Regime", dossier['sentiment_metrics']['volatility_regime'], "Rolling conditional variance in media reporting."),
-        ("Narrative Velocity", f"{dossier['sentiment_metrics']['velocity']} / wk", "Estimated weekly publication frequency index."),
-    ]
+    pdf.cell(55, 6, "DRIVER TITLE", 1, 0, "L", True)
+    pdf.cell(25, 6, "IMPACT", 1, 0, "C", True)
+    pdf.cell(110, 6, "ANALYTICAL DESCRIPTION", 1, 1, "L", True)
 
     pdf.set_font("Helvetica", "", 8)
-    for m, v, interp in metrics_rows:
-        pdf.cell(45, 6, m, 1, 0, "L")
-        pdf.cell(35, 6, v, 1, 0, "C")
-        pdf.cell(110, 6, interp, 1, 1, "L")
+    for drv in dossier.get("drivers", []):
+        pdf.cell(55, 6, str(drv["title"])[:30], 1, 0, "L")
+        pdf.cell(25, 6, str(drv["impact"]), 1, 0, "C")
+        pdf.cell(110, 6, str(drv["description"])[:70], 1, 1, "L")
     pdf.ln(4)
 
     # Stakeholder Power Matrix
@@ -110,47 +103,49 @@ def generate_topic_pdf_dossier(topic_id: str = "us_china") -> bytes:
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
-    pdf.cell(45, 6, "STAKEHOLDER", 1, 0, "L", True)
-    pdf.cell(30, 6, "INFLUENCE", 1, 0, "C", True)
-    pdf.cell(30, 6, "POSTURE", 1, 0, "C", True)
-    pdf.cell(85, 6, "STRATEGIC OBJECTIVE", 1, 1, "L", True)
+    pdf.cell(50, 6, "STAKEHOLDER", 1, 0, "L", True)
+    pdf.cell(30, 6, "POWER", 1, 0, "C", True)
+    pdf.cell(30, 6, "STANCE", 1, 0, "C", True)
+    pdf.cell(80, 6, "LEVERAGE & TACTICS", 1, 1, "L", True)
 
     pdf.set_font("Helvetica", "", 8)
-    for s in dossier["stakeholders"]:
-        pdf.cell(45, 6, str(s["name"]), 1, 0, "L")
+    for s in dossier.get("stakeholders", []):
+        pdf.cell(50, 6, str(s["actor"])[:28], 1, 0, "L")
         pdf.cell(30, 6, str(s["power"]), 1, 0, "C")
-        pdf.cell(30, 6, str(s["alignment"]), 1, 0, "C")
-        pdf.cell(85, 6, str(s["objective"])[:55], 1, 1, "L")
+        pdf.cell(30, 6, str(s["stance"])[:18], 1, 0, "C")
+        pdf.cell(80, 6, str(s["leverage"])[:48], 1, 1, "L")
     pdf.ln(4)
 
     # Scenario Forecast Table
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "3. FORWARD SCENARIOS & PROBABILITY MATRIX", ln=True)
+    pdf.cell(0, 6, "3. FORWARD SCENARIOS (NEXT 4-6 WEEKS)", ln=True)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
-    pdf.cell(45, 6, "SCENARIO", 1, 0, "L", True)
+    pdf.cell(55, 6, "SCENARIO", 1, 0, "L", True)
     pdf.cell(25, 6, "PROBABILITY", 1, 0, "C", True)
-    pdf.cell(120, 6, "POTENTIAL IMPACT & CATALYSTS", 1, 1, "L", True)
+    pdf.cell(30, 6, "PROJ. TONE", 1, 0, "C", True)
+    pdf.cell(80, 6, "SCENARIO DESCRIPTION", 1, 1, "L", True)
 
     pdf.set_font("Helvetica", "", 8)
-    for sc in dossier["scenario_forecasts"]:
-        pdf.cell(45, 6, str(sc["scenario"]), 1, 0, "L")
+    for sc in dossier.get("scenarios", []):
+        pdf.cell(55, 6, str(sc["name"])[:32], 1, 0, "L")
         pdf.cell(25, 6, f"{sc['probability']}%", 1, 0, "C")
-        pdf.cell(120, 6, str(sc["impact"])[:75], 1, 1, "L")
+        pdf.cell(30, 6, f"{sc['tone_projection']:+.2f}", 1, 0, "C")
+        pdf.cell(80, 6, str(sc["description"])[:48], 1, 1, "L")
     pdf.ln(4)
 
-    # Strategic Recommendation
+    # Strategic Vulnerabilities
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "4. STRATEGIC PLAYBOOK & MONITORING ACTIONS", ln=True)
+    pdf.cell(0, 6, "4. KEY VULNERABILITIES & SYSTEMIC RISKS", ln=True)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "", 8.5)
-    for rec in dossier.get("recommendations", []):
-        pdf.multi_cell(0, 4.5, f"•  {rec}")
+    for v in dossier.get("vulnerabilities", []):
+        pdf.multi_cell(0, 4.5, f"•  {v}")
         pdf.ln(1)
 
     # Return PDF bytes
