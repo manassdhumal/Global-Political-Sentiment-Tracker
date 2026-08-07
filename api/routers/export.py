@@ -45,9 +45,9 @@ def export_timeseries_csv(
         df = pd.DataFrame({
             "date": ts_data["dates"],
             "avg_tone": ts_data["raw_tone"],
-            "secular_trend": ts_data["hp_filter"]["trend"],
-            "cyclical_component": ts_data["hp_filter"]["cycle"],
-            "rolling_volatility_4w": ts_data["volatility_clustering"]["series"],
+            "secular_trend": ts_data["hp_decomposition"]["trend"],
+            "cyclical_component": ts_data["hp_decomposition"]["cycle"],
+            "rolling_volatility_4w": ts_data["volatility"]["series"],
         })
         stream = io.StringIO()
         df.to_csv(stream, index=False)

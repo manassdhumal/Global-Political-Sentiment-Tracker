@@ -2,20 +2,46 @@
 from __future__ import annotations
 
 import io
+import unicodedata
 from datetime import datetime, timezone
 from typing import Any
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 from src.analytics.analyst_agent import generate_analyst_dossier
 from src.topics.catalog import resolve_topic
-from src.topics.synth import global_weekly
+
+
+def _sanitize_pdf_text(text: Any) -> str:
+    """Normalize and encode unicode strings into standard latin-1 compatible ASCII text."""
+    if text is None:
+        return ""
+    s = str(text)
+    replacements = {
+        "—": " - ",
+        "–": "-",
+        "―": "-",
+        "“": '"',
+        "”": '"',
+        "‘": "'",
+        "’": "'",
+        "•": "*",
+        "…": "...",
+        "→": "->",
+        "←": "<-",
+    }
+    for old, new in replacements.items():
+        s = s.replace(old, new)
+
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    return s
 
 
 class IntelligenceMemoPDF(FPDF):
     def header(self):
         self.set_font("Helvetica", "B", 8)
         self.set_text_color(120, 120, 130)
-        self.cell(0, 5, "GLOBAL POLITICAL SENTIMENT TRACKER // EXECUTIVE INTELLIGENCE MEMORANDUM", ln=True, align="L")
+        self.cell(0, 5, "GLOBAL POLITICAL SENTIMENT TRACKER // EXECUTIVE INTELLIGENCE MEMORANDUM", align="L", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.set_draw_color(200, 200, 210)
         self.line(10, 15, 200, 15)
         self.ln(5)
@@ -24,7 +50,7 @@ class IntelligenceMemoPDF(FPDF):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 7)
         self.set_text_color(140, 140, 150)
-        self.cell(0, 4, "STRICTLY ANALYTICAL · MEDIA/SOCIAL TONE TELEMETRY · NOT PUBLIC OPINION", ln=True, align="C")
+        self.cell(0, 4, "STRICTLY ANALYTICAL · MEDIA/SOCIAL TONE TELEMETRY · NOT PUBLIC OPINION", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.cell(0, 4, f"Page {self.page_no()}/{{nb}}", align="R")
 
 
@@ -43,21 +69,22 @@ def generate_topic_pdf_dossier(topic_id: str = "us_china") -> bytes:
     pdf.set_fill_color(240, 243, 246)
     pdf.set_text_color(30, 41, 59)
     pdf.set_font("Helvetica", "B", 10)
-    pdf.cell(0, 7, "  CLASSIFICATION: OPEN-SOURCE QUANTITATIVE INTELLIGENCE", ln=True, fill=True)
+    pdf.cell(0, 7, "  CLASSIFICATION: OPEN-SOURCE QUANTITATIVE INTELLIGENCE", fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(3)
 
     # Memo Meta Table
-    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_font("Helvetica", "B", 15)
     pdf.set_text_color(15, 23, 42)
-    pdf.multi_cell(0, 7, f"SPECIAL BRIEFING: {dossier['topic']['label'].upper()}")
+    label_clean = _sanitize_pdf_text(dossier["topic"]["label"]).upper()
+    pdf.multi_cell(0, 7, f"SPECIAL BRIEFING: {label_clean}")
     pdf.ln(2)
 
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(70, 80, 95)
-    pdf.cell(50, 5, f"Date: {now_str}", ln=False)
-    pdf.cell(50, 5, f"Category: {topic.category.upper()}", ln=False)
-    pdf.cell(50, 5, f"Net Tone: {dossier['latest_tone']:+.2f}", ln=False)
-    pdf.cell(0, 5, f"Engine: {dossier['source'].upper()}", ln=True)
+    pdf.cell(50, 5, f"Date: {now_str}")
+    pdf.cell(50, 5, f"Category: {_sanitize_pdf_text(topic.category).upper()}")
+    pdf.cell(50, 5, f"Net Tone: {dossier['latest_tone']:+.2f}")
+    pdf.cell(0, 5, f"Engine: {_sanitize_pdf_text(dossier['source']).upper()}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(4)
 
     # BLUF Box
@@ -66,86 +93,98 @@ def generate_topic_pdf_dossier(topic_id: str = "us_china") -> bytes:
     pdf.set_line_width(0.4)
     pdf.set_font("Helvetica", "B", 10)
     pdf.set_text_color(67, 56, 202)
-    pdf.cell(0, 6, "  BOTTOM LINE UP FRONT (BLUF)", ln=True, fill=True, border=1)
+    pdf.cell(0, 6, "  BOTTOM LINE UP FRONT (BLUF)", fill=True, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(30, 41, 59)
     pdf.set_fill_color(248, 250, 252)
-    bluf_text = f"\n{dossier['bluf']}\n"
-    pdf.multi_cell(0, 5, bluf_text, fill=True, border=1)
+    bluf_clean = _sanitize_pdf_text(dossier["bluf"])
+    pdf.multi_cell(0, 5, f"\n{bluf_clean}\n", fill=True, border=1)
     pdf.ln(4)
 
     # Causal Drivers Table
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "1. CAUSAL DRIVERS & MEDIA NARRATIVE PRESSURES", ln=True)
+    pdf.cell(0, 6, "1. CAUSAL DRIVERS & MEDIA NARRATIVE PRESSURES", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
     pdf.set_draw_color(203, 213, 225)
-    pdf.cell(55, 6, "DRIVER TITLE", 1, 0, "L", True)
-    pdf.cell(25, 6, "IMPACT", 1, 0, "C", True)
-    pdf.cell(110, 6, "ANALYTICAL DESCRIPTION", 1, 1, "L", True)
+    pdf.cell(55, 6, "DRIVER TITLE", border=1, fill=True)
+    pdf.cell(25, 6, "IMPACT", border=1, align="C", fill=True)
+    pdf.cell(110, 6, "ANALYTICAL DESCRIPTION", border=1, fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "", 8)
     for drv in dossier.get("drivers", []):
-        pdf.cell(55, 6, str(drv["title"])[:30], 1, 0, "L")
-        pdf.cell(25, 6, str(drv["impact"]), 1, 0, "C")
-        pdf.cell(110, 6, str(drv["description"])[:70], 1, 1, "L")
+        t_clean = _sanitize_pdf_text(drv["title"])[:30]
+        i_clean = _sanitize_pdf_text(drv["impact"])
+        d_clean = _sanitize_pdf_text(drv["description"])[:70]
+        pdf.cell(55, 6, t_clean, border=1)
+        pdf.cell(25, 6, i_clean, border=1, align="C")
+        pdf.cell(110, 6, d_clean, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(4)
 
     # Stakeholder Power Matrix
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "2. PRIMARY STAKEHOLDER MATRIX", ln=True)
+    pdf.cell(0, 6, "2. PRIMARY STAKEHOLDER MATRIX", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
-    pdf.cell(50, 6, "STAKEHOLDER", 1, 0, "L", True)
-    pdf.cell(30, 6, "POWER", 1, 0, "C", True)
-    pdf.cell(30, 6, "STANCE", 1, 0, "C", True)
-    pdf.cell(80, 6, "LEVERAGE & TACTICS", 1, 1, "L", True)
+    pdf.cell(50, 6, "STAKEHOLDER", border=1, fill=True)
+    pdf.cell(30, 6, "POWER", border=1, align="C", fill=True)
+    pdf.cell(30, 6, "STANCE", border=1, align="C", fill=True)
+    pdf.cell(80, 6, "LEVERAGE & TACTICS", border=1, fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "", 8)
     for s in dossier.get("stakeholders", []):
-        pdf.cell(50, 6, str(s["actor"])[:28], 1, 0, "L")
-        pdf.cell(30, 6, str(s["power"]), 1, 0, "C")
-        pdf.cell(30, 6, str(s["stance"])[:18], 1, 0, "C")
-        pdf.cell(80, 6, str(s["leverage"])[:48], 1, 1, "L")
+        act = _sanitize_pdf_text(s["actor"])[:28]
+        pow_val = _sanitize_pdf_text(s["power"])
+        stn = _sanitize_pdf_text(s["stance"])[:18]
+        lev = _sanitize_pdf_text(s["leverage"])[:48]
+        pdf.cell(50, 6, act, border=1)
+        pdf.cell(30, 6, pow_val, border=1, align="C")
+        pdf.cell(30, 6, stn, border=1, align="C")
+        pdf.cell(80, 6, lev, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(4)
 
     # Scenario Forecast Table
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "3. FORWARD SCENARIOS (NEXT 4-6 WEEKS)", ln=True)
+    pdf.cell(0, 6, "3. FORWARD SCENARIOS (NEXT 4-6 WEEKS)", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
-    pdf.cell(55, 6, "SCENARIO", 1, 0, "L", True)
-    pdf.cell(25, 6, "PROBABILITY", 1, 0, "C", True)
-    pdf.cell(30, 6, "PROJ. TONE", 1, 0, "C", True)
-    pdf.cell(80, 6, "SCENARIO DESCRIPTION", 1, 1, "L", True)
+    pdf.cell(55, 6, "SCENARIO", border=1, fill=True)
+    pdf.cell(25, 6, "PROBABILITY", border=1, align="C", fill=True)
+    pdf.cell(30, 6, "PROJ. TONE", border=1, align="C", fill=True)
+    pdf.cell(80, 6, "SCENARIO DESCRIPTION", border=1, fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "", 8)
     for sc in dossier.get("scenarios", []):
-        pdf.cell(55, 6, str(sc["name"])[:32], 1, 0, "L")
-        pdf.cell(25, 6, f"{sc['probability']}%", 1, 0, "C")
-        pdf.cell(30, 6, f"{sc['tone_projection']:+.2f}", 1, 0, "C")
-        pdf.cell(80, 6, str(sc["description"])[:48], 1, 1, "L")
+        sc_name = _sanitize_pdf_text(sc["name"])[:32]
+        sc_prob = f"{sc['probability']}%"
+        sc_tone = f"{sc['tone_projection']:+.2f}"
+        sc_desc = _sanitize_pdf_text(sc["description"])[:48]
+        pdf.cell(55, 6, sc_name, border=1)
+        pdf.cell(25, 6, sc_prob, border=1, align="C")
+        pdf.cell(30, 6, sc_tone, border=1, align="C")
+        pdf.cell(80, 6, sc_desc, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(4)
 
     # Strategic Vulnerabilities
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 6, "4. KEY VULNERABILITIES & SYSTEMIC RISKS", ln=True)
+    pdf.cell(0, 6, "4. KEY VULNERABILITIES & SYSTEMIC RISKS", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "", 8.5)
     for v in dossier.get("vulnerabilities", []):
-        pdf.multi_cell(0, 4.5, f"•  {v}")
+        v_clean = _sanitize_pdf_text(v)
+        pdf.multi_cell(0, 4.5, f"*  {v_clean}")
         pdf.ln(1)
 
     # Return PDF bytes
