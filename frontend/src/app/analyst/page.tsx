@@ -74,12 +74,22 @@ ${data.vulnerabilities.map((v) => `- ${v}`).join("\n")}
         </div>
 
         {data && (
-          <button
-            onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors"
-          >
-            <Download size={14} /> Export Memo (.md)
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={`/api/export/pdf/dossier?topic=${topic}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card2 px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:border-accent hover:text-accent transition-colors"
+            >
+              <FileText size={14} className="text-rose-400" /> Export PDF Dossier
+            </a>
+            <button
+              onClick={handleExportMarkdown}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors"
+            >
+              <Download size={14} /> Export Memo (.md)
+            </button>
+          </div>
         )}
       </div>
 

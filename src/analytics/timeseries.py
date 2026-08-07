@@ -9,6 +9,7 @@ import pandas as pd
 
 from src.topics.synth import global_weekly
 from src.topics.catalog import resolve_topic
+from src.cache import cached
 
 
 def decompose_hp_filter(series: pd.Series, lamb: float = 1600.0) -> dict[str, Any]:
@@ -163,6 +164,7 @@ def compute_volatility_clustering(series: pd.Series, window: int = 4) -> dict[st
     }
 
 
+@cached(ttl_seconds=300, key_prefix="econometric_ts")
 def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[str, Any]:
     """Run full econometric time-series analytics on a topic."""
     topic = resolve_topic(topic_id)

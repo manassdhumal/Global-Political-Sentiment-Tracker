@@ -10,6 +10,7 @@ import pandas as pd
 from src.ingestion.market_client import get_market_series, GLOBAL_ASSET_REGISTRY
 from src.topics.synth import global_weekly
 from src.topics.catalog import resolve_topic
+from src.cache import cached
 
 
 def compute_granger_causality(
@@ -71,6 +72,7 @@ def compute_granger_causality(
     }
 
 
+@cached(ttl_seconds=300, key_prefix="market_spillover")
 def analyze_market_spillover(
     topic_id: str = "inflation",
     asset_id: str = "brent_oil",
@@ -143,6 +145,7 @@ def analyze_market_spillover(
     }
 
 
+@cached(ttl_seconds=300, key_prefix="assets_summary")
 def get_all_assets_summary() -> list[dict[str, Any]]:
     """Retrieve quick overview of all tracked macro assets with recent performance."""
     results = []

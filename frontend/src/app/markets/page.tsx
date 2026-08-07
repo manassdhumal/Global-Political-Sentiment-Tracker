@@ -116,6 +116,15 @@ export default function MarketsPage() {
             Quantify how political sentiment velocity transmits to currency volatility, sovereign bond yields, defense contractors, and energy benchmarks.
           </p>
         </div>
+
+        {data && (
+          <a
+            href={`/api/export/csv/market-spillover?topic=${topic}&asset=${asset}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card2 px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:border-accent hover:text-accent transition-colors"
+          >
+            <BarChart3 size={14} className="text-accent" /> Download Spillover CSV
+          </a>
+        )}
       </div>
 
       {/* Asset Quick Selector Strip */}

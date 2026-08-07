@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
 from fastapi import APIRouter, Query
 from src.analytics.geography import get_world_sentiment_map, COUNTRY_REGISTRY
+from src.analytics.geopolitics_map import get_geopolitical_map_layers
 
 router = APIRouter(prefix="/api/geography", tags=["geography"])
 
@@ -18,3 +20,9 @@ def get_world_map(
 def list_countries() -> list[dict]:
     """Return list of supported countries in the geographical intelligence registry."""
     return COUNTRY_REGISTRY
+
+
+@router.get("/layers", response_model=dict[str, Any])
+def get_map_overlays() -> dict[str, Any]:
+    """Return strategic maritime chokepoints, conflict flashpoints, and upcoming elections."""
+    return get_geopolitical_map_layers()
