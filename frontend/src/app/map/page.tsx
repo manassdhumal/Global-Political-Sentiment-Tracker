@@ -183,7 +183,7 @@ export default function WorldMapPage() {
           )}
         >
           <Vote size={14} /> Global Elections Countdown
-          {layersData && <Badge tone="neutral" className="ml-1">{layersData.elections.length}</Badge>}
+          {layersData && <Badge tone="muted" className="ml-1">{layersData.elections.length}</Badge>}
         </button>
       </div>
 
