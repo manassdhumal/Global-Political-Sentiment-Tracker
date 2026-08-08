@@ -1,4 +1,4 @@
-"""Applied Econometric Time-Series Suite: HP Filtering, Unit-Root Tests, Structural Breaks & Volatility."""
+"""Applied Econometric Time-Series Suite: HP Filtering, Unit-Root Tests, Structural Breaks, Volatility & Multi-Topic Overlays."""
 from __future__ import annotations
 
 from typing import Any
@@ -8,8 +8,11 @@ import numpy as np
 import pandas as pd
 
 from src.topics.synth import global_weekly
-from src.topics.catalog import resolve_topic
+from src.topics.catalog import resolve_topic, load_catalog
 from src.cache import cached
+
+
+COLOR_PALETTE = ["#38bdf8", "#f59e0b", "#10b981", "#ec4899", "#8b5cf6"]
 
 
 def decompose_hp_filter(series: pd.Series, lamb: float = 1600.0) -> dict[str, Any]:
@@ -70,7 +73,6 @@ def evaluate_stationarity(series: pd.Series) -> dict[str, Any]:
             p_val = round(float(result[1]), 4)
             crit = {k: round(float(v), 2) for k, v in result[4].items()}
     except Exception:
-        # Simple lag-1 autoregression fallback
         x_lag = vals[:-1]
         y = np.diff(vals)
         slope = np.polyfit(x_lag, y, 1)[0]
@@ -101,7 +103,6 @@ def detect_structural_breaks(dates: list[str], series: pd.Series) -> list[dict[s
     if n < 12:
         return []
 
-    # Rolling window mean & variance shift detection (CUSUM proxy)
     breaks = []
     window = max(4, n // 8)
 
@@ -114,9 +115,11 @@ def detect_structural_breaks(dates: list[str], series: pd.Series) -> list[dict[s
         post_std = np.std(vals[i:i + window]) + 1e-4
         t_stat = abs(delta) / np.sqrt((pre_std ** 2 + post_std ** 2) / window)
 
-        # Significant regime shift at t_stat >= 2.3 (~p < 0.02)
         if t_stat >= 2.2:
             break_type = "Bullish Regime Shift" if delta > 0 else "Bearish Regime Collapse"
+            catalyst_note = (
+                f"Narrative inflection marked by {abs(delta):.1f} pt tone shift. Elevated media focus triggered a regime transition."
+            )
             breaks.append({
                 "date": dates[i],
                 "index": i,
@@ -125,9 +128,9 @@ def detect_structural_breaks(dates: list[str], series: pd.Series) -> list[dict[s
                 "type": break_type,
                 "pre_mean": round(float(pre_mean), 2),
                 "post_mean": round(float(post_mean), 2),
+                "catalyst_note": catalyst_note,
             })
 
-    # Non-maximum suppression to keep distinct local peak breaks
     filtered_breaks = []
     if breaks:
         breaks.sort(key=lambda b: abs(b["t_statistic"]), reverse=True)
@@ -166,7 +169,7 @@ def compute_volatility_clustering(series: pd.Series, window: int = 4) -> dict[st
 
 @cached(ttl_seconds=300, key_prefix="econometric_ts")
 def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[str, Any]:
-    """Run full econometric time-series analytics on a topic."""
+    """Run full econometric time-series analytics on a single topic with volatility bands."""
     topic = resolve_topic(topic_id)
     today = date.today()
     df = global_weekly(topic.label, end=today)
@@ -189,6 +192,12 @@ def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[
     # 4. Volatility Regimes
     vol = compute_volatility_clustering(df["avg_tone"], window=4)
 
+    # 5. Volatility Confidence Bands (Trend +/- 1.96 * Rolling Std)
+    trend_arr = np.array(hp["trend"])
+    vol_arr = np.array(vol["series"])
+    upper_band = [round(float(t + 1.96 * v), 2) for t, v in zip(trend_arr, vol_arr)]
+    lower_band = [round(float(t - 1.96 * v), 2) for t, v in zip(trend_arr, vol_arr)]
+
     return {
         "topic": {"id": topic.id, "label": topic.label, "category": topic.category},
         "dates": dates,
@@ -197,4 +206,65 @@ def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[
         "stationarity": stationarity,
         "structural_breaks": breaks,
         "volatility": vol,
+        "volatility_bands": {
+            "upper": upper_band,
+            "lower": lower_band,
+            "trend": hp["trend"],
+        },
+    }
+
+
+@cached(ttl_seconds=300, key_prefix="ts_multi_overlay")
+def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> dict[str, Any]:
+    """Align and decompose multiple topics simultaneously for multi-series cyclical overlay."""
+    if not topic_ids:
+        topic_ids = ["inflation", "interest_rates", "energy_crisis"]
+
+    today = date.today()
+    topic_objs = [resolve_topic(tid) for tid in topic_ids[:4]]
+    
+    series_list = []
+    primary_series: pd.Series | None = None
+    common_dates: list[str] = []
+
+    for i, t in enumerate(topic_objs):
+        df = global_weekly(t.label, end=today)
+        if df.empty or len(df) < 5:
+            df = global_weekly("politics", end=today)
+
+        dates = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(df["week_start"])]
+        if not common_dates:
+            common_dates = dates
+
+        hp = decompose_hp_filter(df["avg_tone"], lamb=lamb)
+        raw_vals = [round(float(x), 2) for x in df["avg_tone"].to_numpy()]
+        
+        color = COLOR_PALETTE[i % len(COLOR_PALETTE)]
+
+        if i == 0:
+            primary_series = df["avg_tone"]
+            corr_val = 1.0
+        else:
+            if primary_series is not None and len(primary_series) == len(df["avg_tone"]):
+                corr_val = round(float(np.corrcoef(primary_series, df["avg_tone"])[0, 1]), 2)
+                if np.isnan(corr_val):
+                    corr_val = 0.0
+            else:
+                corr_val = 0.0
+
+        series_list.append({
+            "id": t.id,
+            "label": t.label,
+            "category": t.category,
+            "color": color,
+            "raw_tone": raw_vals,
+            "trend": hp["trend"],
+            "cycle": hp["cycle"],
+            "correlation_with_primary": corr_val,
+        })
+
+    return {
+        "topics": [{"id": t.id, "label": t.label, "category": t.category, "color": COLOR_PALETTE[i % len(COLOR_PALETTE)]} for i, t in enumerate(topic_objs)],
+        "dates": common_dates,
+        "series": series_list,
     }

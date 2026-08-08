@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { api, WorldMapData, WorldCountrySentiment } from "@/lib/api";
 import { Card, Badge, cx } from "@/components/ui";
-import { EChart } from "@/components/echart";
+import { EChart, useChartTheme } from "@/components/echart";
 import { toneColor, fmtSigned } from "@/lib/format";
 import {
   Globe,
@@ -17,6 +17,12 @@ import {
   ShieldAlert,
   Vote,
   Layers,
+  Play,
+  Pause,
+  RotateCcw,
+  GitCompare,
+  X,
+  History,
 } from "lucide-react";
 import type { EChartsCoreOption } from "echarts";
 
@@ -91,6 +97,58 @@ function sparkOption(spark: number[], color: string): EChartsCoreOption {
   };
 }
 
+function bilateralComparisonOption(
+  c1: WorldCountrySentiment,
+  c2: WorldCountrySentiment,
+  dates: string[]
+): EChartsCoreOption {
+  const d = dates && dates.length > 0 ? dates : c1.spark.map((_, i) => `W${i + 1}`);
+  return {
+    backgroundColor: "transparent",
+    grid: { left: 35, right: 15, top: 30, bottom: 25 },
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: "#1e293b",
+      borderColor: "#334155",
+      textStyle: { color: "#f8fafc" },
+    },
+    legend: {
+      data: [`${c1.flag} ${c1.name}`, `${c2.flag} ${c2.name}`],
+      textStyle: { color: "#94a3b8", fontSize: 11 },
+      top: 2,
+    },
+    xAxis: {
+      type: "category",
+      data: d,
+      axisLabel: { color: "#64748b", fontSize: 9 },
+      axisLine: { lineStyle: { color: "#334155" } },
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: { color: "#64748b", fontSize: 10 },
+      splitLine: { lineStyle: { color: "#1e293b" } },
+    },
+    series: [
+      {
+        name: `${c1.flag} ${c1.name}`,
+        type: "line",
+        data: c1.spark,
+        smooth: true,
+        lineStyle: { width: 2.5, color: "#38bdf8" },
+        itemStyle: { color: "#38bdf8" },
+      },
+      {
+        name: `${c2.flag} ${c2.name}`,
+        type: "line",
+        data: c2.spark,
+        smooth: true,
+        lineStyle: { width: 2.5, color: "#f59e0b" },
+        itemStyle: { color: "#f59e0b" },
+      },
+    ],
+  };
+}
+
 export default function WorldMapPage() {
   const [activeLayer, setActiveLayer] = useState<"sentiment" | "chokepoints" | "conflicts" | "elections">("sentiment");
   const [region, setRegion] = useState("all");
@@ -99,6 +157,12 @@ export default function WorldMapPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<WorldCountrySentiment | null>(null);
+  const [comparisonCountry, setComparisonCountry] = useState<WorldCountrySentiment | null>(null);
+
+  // Time-Machine Playback State
+  const [playbackIndex, setPlaybackIndex] = useState<number>(11);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -113,10 +177,34 @@ export default function WorldMapPage() {
         if (mapRes.countries.length > 0 && !selectedCountry) {
           setSelectedCountry(mapRes.countries[0]);
         }
+        if (mapRes.timeline_weeks && mapRes.timeline_weeks.length > 0) {
+          setPlaybackIndex(mapRes.timeline_weeks.length - 1);
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [region]);
+
+  // Handle Playback Interval
+  useEffect(() => {
+    if (isPlaying) {
+      timerRef.current = setInterval(() => {
+        setPlaybackIndex((prev) => {
+          const maxIdx = data?.timeline_weeks ? data.timeline_weeks.length - 1 : 11;
+          return prev >= maxIdx ? 0 : prev + 1;
+        });
+      }, 1400);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPlaying, data]);
+
+  const timelineWeeks = data?.timeline_weeks || [];
+  const currentWeekDate = timelineWeeks[playbackIndex] || "Latest Week";
+  const isLatestWeek = timelineWeeks.length === 0 || playbackIndex === timelineWeeks.length - 1;
 
   return (
     <div className="space-y-6">
@@ -144,7 +232,8 @@ export default function WorldMapPage() {
               : "bg-card text-muted hover:text-foreground hover:bg-card2"
           )}
         >
-          <Globe size={14} /> World Sentiment Heatmap
+          <Globe size={14} /> World Sentiment &amp; Heatmap
+          {data && <Badge tone="muted" className="ml-1">{data.countries.length}</Badge>}
         </button>
 
         <button
@@ -169,7 +258,7 @@ export default function WorldMapPage() {
               : "bg-card text-muted hover:text-foreground hover:bg-card2"
           )}
         >
-          <ShieldAlert size={14} /> Active Conflict Theaters
+          <ShieldAlert size={14} /> Conflict Flashpoints &amp; Combat
           {layersData && <Badge tone="negative" className="ml-1">{layersData.conflict_flashpoints.length}</Badge>}
         </button>
 
@@ -229,6 +318,75 @@ export default function WorldMapPage() {
             </Card>
           </div>
 
+          {/* 12-WEEK TIME-MACHINE PLAYBACK BAR */}
+          {timelineWeeks.length > 0 && (
+            <Card className="p-4 bg-card/80 border-accent/30 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <History size={16} className="text-accent" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-accent">12-Week Time-Machine Playback</span>
+                  <Badge tone={isLatestWeek ? "positive" : "warning"} className="font-mono text-[10px]">
+                    {isLatestWeek ? "LIVE / LATEST" : `WEEK ${playbackIndex + 1}/12`}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted font-mono">{currentWeekDate}</span>
+                  {!isLatestWeek && (
+                    <button
+                      onClick={() => {
+                        setIsPlaying(false);
+                        setPlaybackIndex(timelineWeeks.length - 1);
+                      }}
+                      className="rounded bg-accent/20 px-2 py-0.5 text-[11px] font-semibold text-accent hover:bg-accent/30 transition-colors"
+                    >
+                      Jump to Live
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-white hover:bg-accent/90 transition-all shadow-sm"
+                  title={isPlaying ? "Pause Timeline" : "Play Timeline"}
+                >
+                  {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setPlaybackIndex(0);
+                  }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted hover:text-foreground transition-all"
+                  title="Reset to Week 1"
+                >
+                  <RotateCcw size={13} />
+                </button>
+
+                <div className="flex-1 flex flex-col gap-1">
+                  <input
+                    type="range"
+                    min={0}
+                    max={timelineWeeks.length - 1}
+                    value={playbackIndex}
+                    onChange={(e) => {
+                      setIsPlaying(false);
+                      setPlaybackIndex(parseInt(e.target.value, 10));
+                    }}
+                    className="w-full h-1.5 bg-card2 rounded-lg appearance-none cursor-pointer accent-accent"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted font-mono">
+                    <span>{timelineWeeks[0]}</span>
+                    <span>{timelineWeeks[Math.floor(timelineWeeks.length / 2)]}</span>
+                    <span>{timelineWeeks[timelineWeeks.length - 1]}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Region Filter Bar */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <Filter size={15} className="text-muted shrink-0 ml-1" />
@@ -254,7 +412,13 @@ export default function WorldMapPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {data.countries.map((c) => {
                   const isSelected = selectedCountry?.iso3 === c.iso3;
-                  const color = toneColor(c.latest_tone);
+                  const isCompared = comparisonCountry?.iso3 === c.iso3;
+                  // Dynamic playback tone if time machine active
+                  const activeTone = (c.history && c.history[playbackIndex] !== undefined)
+                    ? c.history[playbackIndex]
+                    : c.latest_tone;
+                  const color = toneColor(activeTone);
+
                   return (
                     <div
                       key={c.iso3}
@@ -263,8 +427,10 @@ export default function WorldMapPage() {
                         "cursor-pointer rounded-xl border p-4 transition-all duration-200 hover:border-accent/50",
                         isSelected
                           ? "border-accent bg-accent/5 shadow-md shadow-accent/5 ring-1 ring-accent/30"
+                          : isCompared
+                          ? "border-amber-500 bg-amber-500/5 shadow-md ring-1 ring-amber-500/30"
                           : "border-border bg-card hover:bg-card2",
-                        c.is_hotspot && !isSelected && "border-rose-500/40 bg-rose-500/[0.03]"
+                        c.is_hotspot && !isSelected && !isCompared && "border-rose-500/40 bg-rose-500/[0.03]"
                       )}
                     >
                       <div className="flex items-start justify-between">
@@ -284,7 +450,7 @@ export default function WorldMapPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-base font-bold tabular-nums" style={{ color }}>
-                            {fmtSigned(c.latest_tone)}
+                            {fmtSigned(activeTone)}
                           </div>
                           <div className={cx(
                             "text-[10px] tabular-nums font-medium flex items-center justify-end gap-0.5",
@@ -298,7 +464,26 @@ export default function WorldMapPage() {
 
                       <div className="mt-3 flex items-center justify-between text-[11px] text-muted border-t border-border/50 pt-2">
                         <span>Articles: <strong>{c.volume.toLocaleString()}</strong></span>
-                        <span>Divergence: <strong>{c.gap > 0 ? `+${c.gap}` : c.gap}</strong></span>
+                        <div className="flex items-center gap-2">
+                          <span>Divergence: <strong>{c.gap > 0 ? `+${c.gap}` : c.gap}</strong></span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (comparisonCountry?.iso3 === c.iso3) {
+                                setComparisonCountry(null);
+                              } else {
+                                setComparisonCountry(c);
+                              }
+                            }}
+                            className={cx(
+                              "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors",
+                              isCompared ? "bg-amber-500 text-white" : "bg-card2 hover:bg-card hover:text-foreground"
+                            )}
+                            title="Compare with selected country"
+                          >
+                            <GitCompare size={10} /> {isCompared ? "Comparing" : "Compare"}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -306,9 +491,66 @@ export default function WorldMapPage() {
               </div>
             </div>
 
-            {/* Country Detail Inspector Drawer */}
+            {/* Country Detail Inspector & Bilateral Comparison Drawer */}
             <div className="space-y-4">
-              {selectedCountry ? (
+              {/* BILATERAL HEAD-TO-HEAD COMPARISON DRAWER */}
+              {selectedCountry && comparisonCountry && selectedCountry.iso3 !== comparisonCountry.iso3 ? (
+                <Card className="sticky top-6 p-5 space-y-4 border-amber-500/40 bg-card">
+                  <div className="flex items-center justify-between border-b border-border pb-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                      <GitCompare size={15} /> Bilateral Country Comparison
+                    </div>
+                    <button
+                      onClick={() => setComparisonCountry(null)}
+                      className="text-muted hover:text-foreground p-1"
+                      title="Close Comparison"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {/* Head-to-Head Cards */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-card2 p-3 text-center space-y-1">
+                      <span className="text-3xl">{selectedCountry.flag}</span>
+                      <div className="text-sm font-bold truncate">{selectedCountry.name}</div>
+                      <div className="text-base font-bold tabular-nums" style={{ color: toneColor(selectedCountry.latest_tone) }}>
+                        {fmtSigned(selectedCountry.latest_tone)}
+                      </div>
+                      <div className="text-[10px] text-muted">Public Tone: {fmtSigned(selectedCountry.public_sentiment)}</div>
+                    </div>
+
+                    <div className="rounded-lg bg-card2 p-3 text-center space-y-1">
+                      <span className="text-3xl">{comparisonCountry.flag}</span>
+                      <div className="text-sm font-bold truncate">{comparisonCountry.name}</div>
+                      <div className="text-base font-bold tabular-nums" style={{ color: toneColor(comparisonCountry.latest_tone) }}>
+                        {fmtSigned(comparisonCountry.latest_tone)}
+                      </div>
+                      <div className="text-[10px] text-muted">Public Tone: {fmtSigned(comparisonCountry.public_sentiment)}</div>
+                    </div>
+                  </div>
+
+                  {/* Dual 12-Week Trend Line Chart */}
+                  <div className="space-y-1 rounded-lg bg-card2 p-3">
+                    <div className="text-[10px] uppercase font-bold text-muted">12-Week Comparative Sentiment Trajectory</div>
+                    <div className="h-44 w-full">
+                      <EChart
+                        option={bilateralComparisonOption(selectedCountry, comparisonCountry, timelineWeeks)}
+                        className="h-44 w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Divergence Metric Strip */}
+                  <div className="rounded-lg bg-card2 p-2.5 flex items-center justify-between text-xs">
+                    <span className="text-muted font-medium">Bilateral Sentiment Delta</span>
+                    <span className="font-bold font-mono">
+                      {fmtSigned(round(selectedCountry.latest_tone - comparisonCountry.latest_tone, 2))} pts
+                    </span>
+                  </div>
+                </Card>
+              ) : selectedCountry ? (
+                /* SINGLE COUNTRY INSPECTOR DRAWER */
                 <Card className="sticky top-6 p-5 space-y-4">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                     <div className="flex items-center gap-2.5">
@@ -365,8 +607,8 @@ export default function WorldMapPage() {
                   </Link>
                 </Card>
               ) : (
-                <div className="rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted">
-                  Select a country on the map to inspect telemetry
+                <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border text-center p-6 text-sm text-muted">
+                  Select any country card on the left to inspect detailed geopolitical vectors.
                 </div>
               )}
             </div>
@@ -374,99 +616,105 @@ export default function WorldMapPage() {
         </div>
       )}
 
-      {/* VIEW 2: STRATEGIC MARITIME CHOKEPOINTS */}
+      {/* VIEW 2: MARITIME CHOKEPOINTS */}
       {activeLayer === "chokepoints" && layersData && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {layersData.chokepoints.map((cp) => (
-            <Card key={cp.id} className="p-5 space-y-3 border-l-4 border-l-amber-500">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Anchor size={16} className="text-amber-400" />
-                    <h3 className="text-base font-bold text-foreground">{cp.name}</h3>
-                  </div>
-                  <div className="text-[11px] text-muted font-mono mt-0.5">
-                    Coords: {cp.lat}° N, {cp.lng}° E
-                  </div>
-                </div>
-                <Badge tone={cp.risk_tier === "Critical" || cp.risk_tier === "Severe" ? "negative" : "warning"}>
-                  {cp.risk_tier} Risk
-                </Badge>
-              </div>
-
-              <p className="text-xs text-muted leading-relaxed">{cp.summary}</p>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-card2 p-2">
-                  <span className="text-[10px] text-muted uppercase font-bold block">Oil Transit</span>
-                  <span className="font-mono font-bold text-foreground">{cp.oil_transit_mbpd}M bpd ({cp.share_of_global_oil_pct}% global)</span>
-                </div>
-                <div className="rounded-lg bg-card2 p-2">
-                  <span className="text-[10px] text-muted uppercase font-bold block">Security Posture</span>
-                  <span className="font-mono font-bold text-amber-400 truncate block">{cp.security_status}</span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-border/50 text-[11px] text-muted truncate">
-                <strong>Littoral Actors:</strong> {cp.primary_actors.join(", ")}
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* VIEW 3: ACTIVE CONFLICT FLASHPOINTS */}
-      {activeLayer === "conflicts" && layersData && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {layersData.conflict_flashpoints.map((fp) => (
-            <Card key={fp.id} className="p-5 space-y-3 border-l-4 border-l-rose-500">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert size={16} className="text-rose-500" />
-                    <h3 className="text-base font-bold text-foreground">{fp.title}</h3>
-                  </div>
-                  <div className="text-[11px] text-rose-400 font-medium mt-0.5">{fp.category}</div>
-                </div>
-                <Badge tone="negative">{fp.intensity}</Badge>
-              </div>
-
-              <p className="text-xs text-muted leading-relaxed">{fp.summary}</p>
-
-              <div className="text-[11px] font-mono text-muted pt-2 border-t border-border/50">
-                Theater Coords: {fp.lat}° N, {fp.lng}° E
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* VIEW 4: GLOBAL ELECTIONS COUNTDOWN */}
-      {activeLayer === "elections" && layersData && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {layersData.elections.map((el, i) => (
-            <Card key={i} className="p-5 space-y-3 border-l-4 border-l-indigo-500">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{el.flag}</span>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {layersData.chokepoints.map((cp) => (
+              <Card key={cp.id} className="p-5 space-y-3 border-border hover:border-accent/50 transition-all">
+                <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-sm font-bold text-foreground">{el.country}</h3>
-                    <span className="text-xs text-accent font-medium">{el.event}</span>
+                    <h3 className="font-bold text-base flex items-center gap-1.5">
+                      <Anchor size={16} className="text-accent" /> {cp.name}
+                    </h3>
+                    <div className="text-xs text-muted mt-0.5">{cp.type.toUpperCase()} · Lat {cp.lat}, Lng {cp.lng}</div>
+                  </div>
+                  <Badge tone={cp.risk_tier === "Critical" ? "negative" : cp.risk_tier === "Elevated" ? "warning" : "positive"}>
+                    {cp.risk_tier} Risk
+                  </Badge>
+                </div>
+
+                <p className="text-xs text-muted leading-relaxed">{cp.summary}</p>
+
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50 text-xs">
+                  <div>
+                    <span className="text-[10px] text-muted uppercase">Daily Oil Flow</span>
+                    <div className="font-bold font-mono">{cp.oil_transit_mbpd}M bpd</div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted uppercase">Global Share</span>
+                    <div className="font-bold font-mono text-accent">{cp.share_of_global_oil_pct}% of world</div>
                   </div>
                 </div>
-                <Badge tone="accent">
-                  <Vote size={11} className="mr-1" /> {el.date}
-                </Badge>
-              </div>
 
-              <div className="rounded-lg bg-card2 p-3 text-xs space-y-1">
-                <div className="text-[10px] uppercase font-bold text-muted tracking-wider">Strategic Stakes</div>
-                <p className="text-muted leading-relaxed">{el.stakes}</p>
-              </div>
-            </Card>
-          ))}
+                <div className="pt-2">
+                  <span className="text-[10px] text-muted uppercase font-bold">Key Actors &amp; Littoral States:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {cp.primary_actors.map((actor, i) => (
+                      <span key={i} className="rounded bg-card2 px-2 py-0.5 text-[11px] font-medium border border-border">
+                        {actor}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 3: CONFLICT FLASHPOINTS */}
+      {activeLayer === "conflicts" && layersData && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {layersData.conflict_flashpoints.map((fp) => (
+              <Card key={fp.id} className="p-5 space-y-3 border-rose-500/20 bg-rose-500/[0.02]">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-bold text-base flex items-center gap-1.5 text-rose-400">
+                      <ShieldAlert size={16} /> {fp.title}
+                    </h3>
+                    <div className="text-xs text-muted mt-0.5">{fp.category.toUpperCase()} · Intensity: {fp.intensity}</div>
+                  </div>
+                  <span className="animate-pulse rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-500 border border-rose-500/30">
+                    LIVE THEATER
+                  </span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed">{fp.summary}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 4: ELECTIONS COUNTDOWN */}
+      {activeLayer === "elections" && layersData && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {layersData.elections.map((el, i) => (
+              <Card key={i} className="p-5 space-y-3 border-border hover:border-accent/40 transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{el.flag}</span>
+                    <div>
+                      <h3 className="font-bold text-sm leading-tight">{el.country}</h3>
+                      <div className="text-xs text-accent font-semibold">{el.event}</div>
+                    </div>
+                  </div>
+                  <Badge tone="accent" className="font-mono text-[11px]">{el.date}</Badge>
+                </div>
+                <div className="text-xs text-muted bg-card2 p-2.5 rounded-lg border border-border/50">
+                  <strong className="text-foreground">Strategic Stakes:</strong> {el.stakes}
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
+}
+
+function round(val: number, decimals: number = 2): number {
+  return Number(Math.round(Number(val + "e" + decimals)) + "e-" + decimals);
 }

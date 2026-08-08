@@ -48,6 +48,9 @@ def get_world_sentiment_map(region: str = "all") -> dict[str, Any]:
     total_articles = 0
     all_tones = []
     today = date.today()
+    timeline_weeks: list[str] = []
+
+    country_histories: list[list[float]] = []
 
     for c in COUNTRY_REGISTRY:
         if region != "all" and region.lower() not in c["groups"]:
@@ -57,6 +60,10 @@ def get_world_sentiment_map(region: str = "all") -> dict[str, Any]:
         df = global_weekly(c["name"], end=today)
         if df.empty or len(df) < 2:
             continue
+
+        if not timeline_weeks:
+            recent_df = df.iloc[-12:]
+            timeline_weeks = [d.strftime("%Y-%m-%d") for d in pd.to_datetime(recent_df["week_start"])]
 
         tones = df["avg_tone"].to_numpy()
         vols = df["article_volume"].to_numpy()
@@ -78,6 +85,7 @@ def get_world_sentiment_map(region: str = "all") -> dict[str, Any]:
             hotspot_count += 1
 
         spark = [round(float(x), 2) for x in tones[-12:]]
+        country_histories.append(spark)
 
         # Top local narrative theme
         status_label = "Neutral"
@@ -105,6 +113,7 @@ def get_world_sentiment_map(region: str = "all") -> dict[str, Any]:
             "is_hotspot": is_hotspot,
             "status_label": status_label,
             "spark": spark,
+            "history": spark,
         })
 
     # Sort countries by volume / prominence
@@ -112,13 +121,21 @@ def get_world_sentiment_map(region: str = "all") -> dict[str, Any]:
 
     global_avg_tone = round(float(np.mean(all_tones)), 2) if all_tones else 0.0
 
+    # Compute timeline average tones
+    weekly_global_tones = []
+    if country_histories and timeline_weeks:
+        arr = np.array(country_histories)
+        weekly_global_tones = [round(float(m), 2) for m in np.mean(arr, axis=0)]
+
     return {
         "region": region,
+        "timeline_weeks": timeline_weeks,
         "summary": {
             "country_count": len(countries_data),
             "hotspot_count": hotspot_count,
             "global_avg_tone": global_avg_tone,
             "total_articles": total_articles,
+            "weekly_global_tones": weekly_global_tones,
         },
         "countries": countries_data,
     }

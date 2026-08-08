@@ -73,15 +73,18 @@ export interface WorldCountrySentiment {
   is_hotspot: boolean;
   status_label: string;
   spark: number[];
+  history?: number[];
 }
 
 export interface WorldMapData {
   region: string;
+  timeline_weeks?: string[];
   summary: {
     country_count: number;
     hotspot_count: number;
     global_avg_tone: number;
     total_articles: number;
+    weekly_global_tones?: number[];
   };
   countries: WorldCountrySentiment[];
 }
@@ -204,12 +207,18 @@ export interface EconometricData {
     type: string;
     pre_mean: number;
     post_mean: number;
+    catalyst_note?: string;
   }[];
   volatility: {
     series: number[];
     current_volatility: number;
     mean_volatility: number;
     regime: string;
+  };
+  volatility_bands?: {
+    upper: number[];
+    lower: number[];
+    trend: number[];
   };
 }
 
@@ -285,6 +294,52 @@ export interface AnalystDossierData {
   scenarios: { name: string; probability: number; tone_projection: number; description: string }[];
   vulnerabilities: string[];
   source: string;
+  archetype?: string;
+}
+
+export interface AnalystQAResponse {
+  topic_id: string;
+  topic_label: string;
+  question: string;
+  answer: string;
+  key_takeaways: string[];
+  confidence_score: number;
+  source: string;
+}
+
+export interface MultiTopicOverlayData {
+  topics: { id: string; label: string; category: string; color: string }[];
+  dates: string[];
+  series: {
+    id: string;
+    label: string;
+    category?: string;
+    color: string;
+    raw_tone: number[];
+    trend: number[];
+    cycle: number[];
+    correlation_with_primary: number;
+  }[];
+}
+
+export interface ContagionSimResponse {
+  seed_topic: string;
+  seed_label: string;
+  shock_magnitude: number;
+  attenuation_rate: number;
+  steps: {
+    step: number;
+    description: string;
+    affected_nodes: {
+      id: string;
+      label: string;
+      cluster_name: string;
+      pre_shock_tone: number;
+      post_shock_tone: number;
+      delta: number;
+      correlation_weight: number;
+    }[];
+  }[];
 }
 
 // ---- Shared config types ----
