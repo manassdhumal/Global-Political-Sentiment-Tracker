@@ -5,7 +5,7 @@ from fastapi import APIRouter, Query
 from typing import Any
 from pydantic import BaseModel, Field
 
-from src.analytics.network import build_ideological_network, simulate_contagion_spread, CATEGORY_CLUSTERS
+from src.analytics.network import build_ideological_network, simulate_contagion_spread
 
 
 router = APIRouter(prefix="/api/network", tags=["network"])

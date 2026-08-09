@@ -228,6 +228,18 @@ ${data.vulnerabilities.map((v) => `- ${v}`).join("\n")}
             <p className="text-base font-medium leading-relaxed text-foreground">
               {data.bluf}
             </p>
+            {data.rag_sources && data.rag_sources.length > 0 && (
+              <div className="mt-4 border-t border-accent/20 pt-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-accent mb-2">
+                  <Bot size={14} /> Retrieved Factual Context (RAG)
+                </div>
+                <ul className="list-disc pl-5 text-[11px] text-muted space-y-1">
+                  {data.rag_sources.map((src, i) => (
+                    <li key={i}>{src}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </Card>
 
           {/* Grid: Drivers & Stakeholders */}
@@ -400,6 +412,16 @@ ${data.vulnerabilities.map((v) => `- ${v}`).join("\n")}
                         <span className="text-[10px] uppercase font-bold text-muted">Key Strategic Takeaways:</span>
                         <ul className="list-disc list-inside text-muted text-[11px] space-y-0.5">
                           {item.key_takeaways.map((point, pIdx) => (
+                            <li key={pIdx}>{point}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {item.rag_sources && item.rag_sources.length > 0 && (
+                      <div className="space-y-1 text-xs pt-1 border-t border-border/50">
+                        <span className="text-[10px] uppercase font-bold text-accent">Retrieved RAG Sources:</span>
+                        <ul className="list-disc list-inside text-muted text-[11px] space-y-0.5">
+                          {item.rag_sources.map((point, pIdx) => (
                             <li key={pIdx}>{point}</li>
                           ))}
                         </ul>

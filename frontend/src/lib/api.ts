@@ -295,6 +295,7 @@ export interface AnalystDossierData {
   vulnerabilities: string[];
   source: string;
   archetype?: string;
+  rag_sources?: string[];
 }
 
 export interface AnalystQAResponse {
@@ -305,6 +306,7 @@ export interface AnalystQAResponse {
   key_takeaways: string[];
   confidence_score: number;
   source: string;
+  rag_sources?: string[];
 }
 
 export interface MultiTopicOverlayData {
@@ -319,6 +321,7 @@ export interface MultiTopicOverlayData {
     trend: number[];
     cycle: number[];
     correlation_with_primary: number;
+    granger_causality?: string | null;
   }[];
 }
 

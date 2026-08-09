@@ -21,5 +21,5 @@ from .correlation import (  # noqa: F401
     compute_pairwise_correlation, compute_lead_lag, analyze_topic_correlations)
 from .geography import get_world_sentiment_map, COUNTRY_REGISTRY  # noqa: F401
 from .simulator import simulate_policy_shock, EVENT_PRESETS  # noqa: F401
-from .network import build_ideological_network, CATEGORY_CLUSTERS  # noqa: F401
+from .network import build_ideological_network  # noqa: F401
 from .polling import compare_polling_vs_sentiment, POLLING_ENTITIES  # noqa: F401

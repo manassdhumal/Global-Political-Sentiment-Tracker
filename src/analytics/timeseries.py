@@ -241,6 +241,7 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
         
         color = COLOR_PALETTE[i % len(COLOR_PALETTE)]
 
+        granger_res = None
         if i == 0:
             primary_series = df["avg_tone"]
             corr_val = 1.0
@@ -249,6 +250,21 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
                 corr_val = round(float(np.corrcoef(primary_series, df["avg_tone"])[0, 1]), 2)
                 if np.isnan(corr_val):
                     corr_val = 0.0
+                
+                # Granger Causality Test (Primary -> Secondary)
+                try:
+                    from statsmodels.tsa.stattools import grangercausalitytests
+                    # X = [Secondary (target), Primary (predictor)]
+                    test_data = pd.DataFrame({"y": df["avg_tone"], "x": primary_series}).dropna()
+                    if len(test_data) > 10:
+                        res = grangercausalitytests(test_data, maxlag=[2], verbose=False)
+                        p_value = res[2][0]['ssr_ftest'][1]
+                        if p_value < 0.05:
+                            granger_res = f"Primary leads Secondary (p={p_value:.3f})"
+                        else:
+                            granger_res = "No significant lead-lag"
+                except Exception:
+                    granger_res = "Insufficient data"
             else:
                 corr_val = 0.0
 
@@ -261,6 +277,7 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
             "trend": hp["trend"],
             "cycle": hp["cycle"],
             "correlation_with_primary": corr_val,
+            "granger_causality": granger_res,
         })
 
     return {

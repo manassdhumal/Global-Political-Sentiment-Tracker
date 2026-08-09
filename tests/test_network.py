@@ -1,6 +1,6 @@
 from starlette.testclient import TestClient
 from api.main import app
-from src.analytics.network import build_ideological_network, CATEGORY_CLUSTERS
+from src.analytics.network import build_ideological_network
 
 client = TestClient(app)
 

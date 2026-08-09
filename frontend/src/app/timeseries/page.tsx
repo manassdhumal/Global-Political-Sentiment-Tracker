@@ -549,11 +549,25 @@ export default function TimeseriesPage() {
                       <Badge tone="accent">{s.category}</Badge>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
-                      <span className="text-muted">Corr. with {multiData.series[0].label}:</span>
-                      <span className="font-bold font-mono">
-                        {fmtSigned(s.correlation_with_primary)}
-                      </span>
+                    <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted">Corr. with {multiData.series[0].label}:</span>
+                        <span className="font-bold font-mono">
+                          {fmtSigned(s.correlation_with_primary)}
+                        </span>
+                      </div>
+                      
+                      {idx > 0 && s.granger_causality && (
+                        <div className="flex flex-col gap-0.5 rounded bg-card2 p-2 border border-border">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Granger Causality</span>
+                          <span className={cx(
+                            "text-xs font-medium",
+                            s.granger_causality.includes("leads") ? "text-accent" : "text-muted"
+                          )}>
+                            {s.granger_causality}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 ))}

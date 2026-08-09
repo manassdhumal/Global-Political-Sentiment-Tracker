@@ -9,10 +9,11 @@ import httpx
 
 from src.topics.synth import global_weekly, opinion_weekly
 from src.topics.catalog import resolve_topic
+from src.analytics.rag_store import retrieve_context
 
 
 def _generate_offline_intelligence_dossier(
-    topic_label: str, topic_category: str, latest_tone: float, archetype: str = "executive"
+    topic_label: str, topic_category: str, latest_tone: float, archetype: str = "executive", rag_context: str = ""
 ) -> dict[str, Any]:
     """Deterministic, high-grade analytical intelligence memo customized by archetype."""
     tone_status = "heavily pressured" if latest_tone < -2.0 else "moderately contested" if latest_tone < 1.0 else "constructive"
@@ -64,6 +65,9 @@ def _generate_offline_intelligence_dossier(
             {"actor": "Electorate & Grassroots Voter Base", "stance": "Divided / Cost-Sensitive", "power": "Critical", "leverage": "Ballot box accountability and approval rating swings."},
         ]
 
+    if rag_context:
+        bluf += f" VERIFIED CONTEXT: {rag_context}"
+
     scenarios = [
         {
             "name": "Base Case: Managed Policy Glidepath (60% Probability)",
@@ -98,7 +102,7 @@ def _generate_offline_intelligence_dossier(
         "scenarios": scenarios,
         "vulnerabilities": vulnerabilities,
         "archetype": archetype,
-        "source": "deterministic_analyst_engine",
+        "source": "deterministic_analyst_engine_with_rag" if rag_context else "deterministic_analyst_engine",
     }
 
 
@@ -110,6 +114,11 @@ def generate_analyst_dossier(topic_id: str = "inflation", archetype: str = "exec
 
     latest_tone = round(float(df_media["avg_tone"].iloc[-1]), 2) if not df_media.empty else 0.0
 
+    # RAG Retrieval
+    retrieved = retrieve_context(topic.label, n_results=2)
+    rag_facts = [r["text"] for r in retrieved]
+    rag_str = " ".join(rag_facts) if rag_facts else ""
+
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
         try:
@@ -117,8 +126,12 @@ def generate_analyst_dossier(topic_id: str = "inflation", archetype: str = "exec
             You are a senior geopolitical intelligence analyst generating an institutional dossier with archetype: '{archetype}'.
             Topic: '{topic.label}' (Category: {topic.category}).
             Current measured media tone: {latest_tone:+.2f} (scale -10 to +10).
+            
+            RETRIEVED FACTUAL CONTEXT (Use this to ground your analysis):
+            {rag_str if rag_str else 'No specific breaking news retrieved.'}
+            
             Respond strictly in valid JSON with keys:
-            - "bluf": string (Bottom Line Up Front, tailored for {archetype})
+            - "bluf": string (Bottom Line Up Front, tailored for {archetype}, referencing the retrieved facts if any)
             - "drivers": list of 3 objects with "title", "impact" (High/Medium), "description"
             - "stakeholders": list of 3-4 objects with "actor", "stance", "power", "leverage"
             - "scenarios": list of 3 objects with "name", "probability" (int), "tone_projection" (float), "description"
@@ -140,15 +153,17 @@ def generate_analyst_dossier(topic_id: str = "inflation", archetype: str = "exec
                     parsed["latest_tone"] = latest_tone
                     parsed["archetype"] = archetype
                     parsed["generated_at"] = datetime.now(timezone.utc).isoformat()
-                    parsed["source"] = "gemini-1.5-flash"
+                    parsed["source"] = "gemini-1.5-flash-rag"
+                    parsed["rag_sources"] = rag_facts
                     return parsed
         except Exception:
             pass
 
-    offline_dossier = _generate_offline_intelligence_dossier(topic.label, topic.category, latest_tone, archetype=archetype)
+    offline_dossier = _generate_offline_intelligence_dossier(topic.label, topic.category, latest_tone, archetype=archetype, rag_context=rag_str)
     offline_dossier["topic"] = {"id": topic.id, "label": topic.label, "category": topic.category}
     offline_dossier["latest_tone"] = latest_tone
     offline_dossier["generated_at"] = datetime.now(timezone.utc).isoformat()
+    offline_dossier["rag_sources"] = rag_facts
     return offline_dossier
 
 
