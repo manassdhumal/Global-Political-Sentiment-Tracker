@@ -83,6 +83,34 @@ EVENT_PRESETS: dict[str, dict[str, Any]] = {
         "decay_factor": 0.78,
         "description": "Contested fiscal reform triggering corporate lobbying pushback and partisan voter debate.",
     },
+    # ── New presets ──────────────────────────────────────────────────────
+    "trade_war": {
+        "label": "Trade War / Escalating Tariff Regime",
+        "category": "geopolitics",
+        "base_tone_impact": -3.1,
+        "public_divergence_impact": -2.8,
+        "volume_surge_pct": 90,
+        "decay_factor": 0.83,
+        "description": "Tit-for-tat tariff escalation suppressing trade sentiment, disrupting supply chains, and fuelling domestic cost-of-living anxiety.",
+    },
+    "climate_accord": {
+        "label": "Major Climate Accord / Net-Zero Treaty Signed",
+        "category": "policy",
+        "base_tone_impact": +2.2,
+        "public_divergence_impact": +1.6,
+        "volume_surge_pct": 55,
+        "decay_factor": 0.68,
+        "description": "Landmark multilateral climate agreement boosting green-investment sentiment while splitting industrial sector commentary.",
+    },
+    "leadership_change": {
+        "label": "Governing Coalition Collapse / Leadership Transition",
+        "category": "politics",
+        "base_tone_impact": -2.5,
+        "public_divergence_impact": -3.0,
+        "volume_surge_pct": 130,
+        "decay_factor": 0.82,
+        "description": "Sudden head-of-government departure or coalition break triggering acute political uncertainty and market risk re-pricing.",
+    },
 }
 
 
@@ -161,7 +189,7 @@ def simulate_policy_shock(
     # 4. Synthesize impact metrics
     peak_drawdown = round(float(min(shocked_media) - last_media_tone if tone_impulse < 0 else max(shocked_media) - last_media_tone), 2)
     max_divergence_gap = round(float(max(abs(sm - sp) for sm, sp in zip(shocked_media, shocked_public))), 2)
-    
+
     # Estimate recovery period in weeks (when impulse < 20% of original)
     recovery_weeks = int(np.ceil(np.log(0.20) / np.log(decay))) if decay < 1.0 else weeks_ahead
     recovery_weeks = min(recovery_weeks, 12)
@@ -200,3 +228,59 @@ def simulate_policy_shock(
             "shocked_lower": shocked_lower,
         },
     }
+
+
+def batch_simulate(
+    topic_id: str,
+    magnitude: float = 1.0,
+    weeks_ahead: int = 6,
+) -> dict[str, Any]:
+    """Run all EVENT_PRESETS against a topic and return a ranked impact comparison table.
+
+    Useful for a 'what-if matrix' on the frontend — shows which events would
+    have the largest effect on a given topic's sentiment trajectory.
+    """
+    results = []
+    for event_type, preset in EVENT_PRESETS.items():
+        sim = simulate_policy_shock(
+            topic_id=topic_id,
+            event_type=event_type,
+            magnitude=magnitude,
+            weeks_ahead=weeks_ahead,
+        )
+        results.append({
+            "event_type": event_type,
+            "event_label": preset["label"],
+            "event_category": preset["category"],
+            "peak_delta": sim["metrics"]["peak_delta"],
+            "recovery_weeks": sim["metrics"]["recovery_weeks"],
+            "volume_surge_pct": sim["metrics"]["volume_surge_pct"],
+            "severity_assessment": sim["metrics"]["severity_assessment"],
+            "max_divergence_gap": sim["metrics"]["max_divergence_gap"],
+        })
+
+    # Sort by absolute peak impact (largest first)
+    results.sort(key=lambda r: abs(r["peak_delta"]), reverse=True)
+
+    topic = resolve_topic(topic_id)
+    return {
+        "topic": {"id": topic.id, "label": topic.label, "category": topic.category},
+        "magnitude": magnitude,
+        "weeks_ahead": weeks_ahead,
+        "ranked_events": results,
+    }
+
+
+def list_presets() -> list[dict[str, Any]]:
+    """Return all available event presets with metadata (for frontend dropdowns)."""
+    return [
+        {
+            "id": k,
+            "label": v["label"],
+            "category": v["category"],
+            "description": v["description"],
+            "base_tone_impact": v["base_tone_impact"],
+            "volume_surge_pct": v["volume_surge_pct"],
+        }
+        for k, v in EVENT_PRESETS.items()
+    ]

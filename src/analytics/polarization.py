@@ -103,6 +103,25 @@ def analyze_media_polarization(topic_id: str = "inflation") -> dict[str, Any]:
     latest_spread = spread_series[-1]["spread"] if spread_series else 1.5
     mean_spread = round(float(np.mean([s["spread"] for s in spread_series])), 2)
 
+    # Convergence trend: compare mean spread of last 8 weeks vs prior 8 weeks
+    convergence_trend = "stable"
+    if len(spread_series) >= 16:
+        recent_mean = float(np.mean([s["spread"] for s in spread_series[-8:]]))
+        prior_mean = float(np.mean([s["spread"] for s in spread_series[-16:-8]]))
+        delta_spread = round(recent_mean - prior_mean, 2)
+        if delta_spread > 0.15:
+            convergence_trend = "widening"
+        elif delta_spread < -0.15:
+            convergence_trend = "narrowing"
+    elif len(spread_series) >= 4:
+        # Simpler early-detection with fewer points
+        recent_mean = float(np.mean([s["spread"] for s in spread_series[-2:]]))
+        prior_mean = float(np.mean([s["spread"] for s in spread_series[:2]]))
+        delta_spread = round(recent_mean - prior_mean, 2)
+        convergence_trend = "widening" if delta_spread > 0.15 else "narrowing" if delta_spread < -0.15 else "stable"
+    else:
+        delta_spread = 0.0
+
     # Polarization Severity Assessment
     if latest_spread >= 3.0:
         polarization_tier = "Severe Echo Chamber Fragmentation"
@@ -121,6 +140,8 @@ def analyze_media_polarization(topic_id: str = "inflation") -> dict[str, Any]:
             "mean_polarization_spread": mean_spread,
             "polarization_tier": polarization_tier,
             "tier_code": tier_code,
+            "convergence_trend": convergence_trend,
+            "spread_delta_8w": round(delta_spread, 2) if 'delta_spread' in dir() else 0.0,
         },
         "spectra": spectrum_results,
         "timeline": spread_series[-26:],

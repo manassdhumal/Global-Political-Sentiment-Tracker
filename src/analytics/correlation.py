@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.cache import cached
+
 
 def compute_pairwise_correlation(
     aligned_df: pd.DataFrame,
@@ -95,7 +97,8 @@ def compute_lead_lag(
         else:
             r = df["a"].corr(df["b"])
 
-        r_clean = round(float(0.0 if np.isnan(r) else r), 3)
+        # Guard against NaN (e.g. constant sub-series after slicing)
+        r_clean = round(float(0.0 if (np.isnan(r) if not isinstance(r, float) else np.isnan(r)) else r), 3)
         lags.append({"lag_weeks": lag, "correlation": r_clean})
 
         if abs(r_clean) > abs(best_r):
@@ -103,6 +106,9 @@ def compute_lead_lag(
             best_lag = lag
 
     zero_r = round(float(df["a"].corr(df["b"])), 3)
+    # Guard zero_r NaN
+    if np.isnan(zero_r):
+        zero_r = 0.0
 
     if best_lag > 0 and abs(best_r) > abs(zero_r) + 0.1:
         summary = f"{label_a} leads {label_b} by ~{best_lag} week(s) (cross-correlation r = {best_r:+.2f})."
@@ -122,6 +128,7 @@ def compute_lead_lag(
     }
 
 
+@cached(ttl_seconds=300, key_prefix="topic_correlations")
 def analyze_topic_correlations(
     topics_data: list[dict],
     metric: str = "media",  # "media" | "public" | "gap" | "attention"

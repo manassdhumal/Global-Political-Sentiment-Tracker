@@ -96,6 +96,37 @@ TOPIC_FRAMING_LEXICON: dict[str, dict[str, dict[str, Any]]] = {
         "de": {"headline": "Industrial energy transformation following pipeline decouplings.", "framing": "Energy transition acceleration and refugee integration."},
         "hi": {"headline": "Energy supply security and persistent bilateral diplomatic mediation calls.", "framing": "Pragmatic national interest and diplomatic dialog."},
     },
+    # ── New framing topics ────────────────────────────────────────────────
+    "inflation": {
+        "en": {"headline": "Central banks navigate stubborn core inflation with cautious forward guidance.", "framing": "Monetary credibility, interest rate stability, and consumer purchasing power."},
+        "zh": {"headline": "Deflationary pressures and export competitiveness challenges dominate domestic discourse.", "framing": "Industrial output support and strategic price stability."},
+        "ar": {"headline": "Food import inflation threatens household budgets across MENA import-dependent economies.", "framing": "Energy subsidies, bread price controls, and social stability."},
+        "es": {"headline": "Wage-price spirals and central bank independence pressures in Latin America.", "framing": "Cost of living crisis, trade union bargaining, and dollarization debates."},
+        "ru": {"headline": "Sanctions-driven import substitution fuels structural price pressures.", "framing": "Sanctions resilience, domestic production subsidies, and currency defense."},
+        "fr": {"headline": "ECB rate policy creates tension between inflation control and growth in Southern Europe.", "framing": "European solidarity, energy price governance, and purchasing power protection."},
+        "de": {"headline": "Export sector cost pressures from energy transition and wage inflation.", "framing": "Competitive exports, Bundesbank orthodoxy, and fiscal discipline."},
+        "hi": {"headline": "RBI tightening cycle balances rupee stability against domestic growth imperatives.", "framing": "Food price management, rural household budgets, and monsoon-driven volatility."},
+    },
+    "ai_regulation": {
+        "en": {"headline": "Washington and Brussels race to establish AI governance frameworks before election cycles.", "framing": "Innovation competitiveness, safety standards, and democratic accountability."},
+        "zh": {"headline": "State-guided AI development balances technological sovereignty with global standards alignment.", "framing": "National AI champion strategy, data sovereignty, and economic modernization."},
+        "ar": {"headline": "Gulf sovereign wealth funds accelerate AI infrastructure investment amid regulatory vacuum.", "framing": "Economic diversification, digital sovereignty, and technology transfer."},
+        "es": {"headline": "Latin American nations navigate AI governance between US and EU regulatory models.", "framing": "Technology access equity, digital colonialism concerns, and innovation capacity."},
+        "ru": {"headline": "Russia accelerates domestic AI development to circumvent Western export controls.", "framing": "Technological sovereignty, military AI applications, and sanctions circumvention."},
+        "fr": {"headline": "EU AI Act enforcement creates compliance burdens for European tech sector.", "framing": "Human rights protection, algorithmic transparency, and French digital industry competitiveness."},
+        "de": {"headline": "German engineering sector seeks AI integration clarity under strict EU liability rules.", "framing": "Industrial automation, precision engineering applications, and legal certainty."},
+        "hi": {"headline": "India positions as AI services hub while debating domestic regulatory framework.", "framing": "IT sector competitiveness, data localization, and digital public infrastructure."},
+    },
+    "climate_change": {
+        "en": {"headline": "Record temperatures and extreme weather events accelerate net-zero policy momentum.", "framing": "Science-based transition, green investment, and intergenerational equity."},
+        "zh": {"headline": "China leads renewable capacity buildout while defending coal transition timeline sovereignty.", "framing": "Developing nation transition rights, green technology export leadership."},
+        "ar": {"headline": "Oil-producing nations balance hydrocarbon revenue defense with sovereign wealth fund green diversification.", "framing": "Economic transition fairness, energy security, and climate finance equity."},
+        "es": {"headline": "Amazon deforestation and extreme drought events dominate Latin American climate narrative.", "framing": "Biodiversity protection, climate debt, and indigenous territorial rights."},
+        "ru": {"headline": "Arctic resource access and reduced shipping costs reframe Russia's climate change calculus.", "framing": "Energy resource sovereignty and strategic Arctic development."},
+        "fr": {"headline": "Nuclear power rebranded as climate solution amid French energy sovereignty debate.", "framing": "Energy mix independence, industrial decarbonization, and EU taxonomy battles."},
+        "de": {"headline": "Energiewende costs and deindustrialization risks dominate German green transition debate.", "framing": "Industrial competitiveness, energy security, and Mittelstand resilience."},
+        "hi": {"headline": "India demands climate finance equity and defends coal transition timeline at COP negotiations.", "framing": "Development rights, climate justice, and renewable energy leapfrogging."},
+    },
 }
 
 
@@ -105,6 +136,10 @@ def analyze_multilingual_framing(topic_id: str = "us_china") -> dict[str, Any]:
     df = global_weekly(topic_id)
     base_tone = round(float(df["avg_tone"].iloc[-1]), 2) if not df.empty else 0.0
 
+    # Use a seeded RNG keyed to the topic for reproducible per-topic jitter.
+    # This prevents the page returning different values on each reload.
+    rng = np.random.default_rng(seed=abs(hash(topic_id)) % (2 ** 31))
+
     spheres_data = []
     tones = []
 
@@ -112,7 +147,7 @@ def analyze_multilingual_framing(topic_id: str = "us_china") -> dict[str, Any]:
     lexicon_map = TOPIC_FRAMING_LEXICON.get(topic_id, {})
 
     for s in LANGUAGE_SPHERES:
-        jitter = round(float(np.random.normal(0, 0.15)), 2)
+        jitter = round(float(rng.normal(0, 0.15)), 2)
         # Apply sphere-specific geopolitical bias model
         sphere_tone = round(float(np.clip(base_tone + s["tone_bias_factor"] + jitter, -10.0, 10.0)), 2)
         tones.append(sphere_tone)

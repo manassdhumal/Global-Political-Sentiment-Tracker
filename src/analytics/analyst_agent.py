@@ -11,6 +11,10 @@ from src.topics.synth import global_weekly, opinion_weekly
 from src.topics.catalog import resolve_topic
 from src.analytics.rag_store import retrieve_context
 
+# Gemini model used for dossier generation and Q&A.
+_GEMINI_MODEL = "gemini-2.0-flash"
+_GEMINI_API_TIMEOUT = 25.0  # raised from 10s to handle peak API load
+
 
 def _generate_offline_intelligence_dossier(
     topic_label: str, topic_category: str, latest_tone: float, archetype: str = "executive", rag_context: str = ""
@@ -47,9 +51,25 @@ def _generate_offline_intelligence_dossier(
         stakeholders = [
             {"actor": "Sovereign State Department / Foreign Ministry", "stance": "Strategic Deterrence", "power": "High", "leverage": "Bilateral treaties, diplomatic demarches, and consular influence."},
             {"actor": "Multilateral Blocs (NATO, BRICS+, G7)", "stance": "Bloc Consolidation", "power": "High", "leverage": "Joint sanctions regimes and multilateral voting coordination."},
-            {"actor": "Non-Aligned Regional Powers", "stance": "Arbitrage / Neutrality", "power": "Medium", "leverage": "Trade route access and diplomatic mediation mediation."},
+            {"actor": "Non-Aligned Regional Powers", "stance": "Arbitrage / Neutrality", "power": "Medium", "leverage": "Trade route access and diplomatic mediation."},
         ]
-    else:
+    elif archetype == "press":
+        bluf = (
+            f"PRESS BRIEFING: Media coverage of '{topic_label}' is currently {tone_status} (Net Tone: {latest_tone:+.2f}). "
+            "Journalists are tracking an accelerating narrative around institutional friction and public-sentiment divergence. "
+            "Key sources to watch: government press offices, opposition spokespeople, and independent polling units."
+        )
+        drivers = [
+            {"title": "Breaking Developments & News Velocity", "impact": "High", "description": f"Coverage volume on {topic_label} is elevated — editors are prioritizing front-page placement, indicating high reader engagement and social sharing potential."},
+            {"title": "Source & Attribution Landscape", "impact": "Medium", "description": "On-record officials remain cautious while off-record leaks suggest internal divisions. Investigative desks are building long-form narratives."},
+            {"title": "Public Engagement & Social Signal", "impact": "High", "description": "Social sentiment is diverging from editorial tone — reader comments and social metrics indicate the public is ahead of the mainstream press framing."},
+        ]
+        stakeholders = [
+            {"actor": "Government Press Office / Spokesperson", "stance": "Narrative Management", "power": "High", "leverage": "Embargo releases, press conferences, and official denials."},
+            {"actor": "Opposition & Watchdog Media", "stance": "Aggressive Scrutiny", "power": "High", "leverage": "Investigative exclusives, FOIA requests, and editorial pressure."},
+            {"actor": "Independent Polling Units", "stance": "Evidential Grounding", "power": "Medium", "leverage": "Data-driven counter-narratives and public opinion benchmarks."},
+        ]
+    else:  # executive (default)
         bluf = (
             f"EXECUTIVE BRIEFING: Global media framing and public narrative on '{topic_label}' is currently {tone_status} (Net Tone: {latest_tone:+.2f}). "
             "Macroeconomic friction and institutional polarization continue to drive coverage, with noticeable divergence across domestic voter blocs."
@@ -126,10 +146,10 @@ def generate_analyst_dossier(topic_id: str = "inflation", archetype: str = "exec
             You are a senior geopolitical intelligence analyst generating an institutional dossier with archetype: '{archetype}'.
             Topic: '{topic.label}' (Category: {topic.category}).
             Current measured media tone: {latest_tone:+.2f} (scale -10 to +10).
-            
+
             RETRIEVED FACTUAL CONTEXT (Use this to ground your analysis):
             {rag_str if rag_str else 'No specific breaking news retrieved.'}
-            
+
             Respond strictly in valid JSON with keys:
             - "bluf": string (Bottom Line Up Front, tailored for {archetype}, referencing the retrieved facts if any)
             - "drivers": list of 3 objects with "title", "impact" (High/Medium), "description"
@@ -137,13 +157,13 @@ def generate_analyst_dossier(topic_id: str = "inflation", archetype: str = "exec
             - "scenarios": list of 3 objects with "name", "probability" (int), "tone_projection" (float), "description"
             - "vulnerabilities": list of 3 strings (risk blindspots)
             """
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
             headers = {"Content-Type": "application/json"}
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"response_mime_type": "application/json"},
             }
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=_GEMINI_API_TIMEOUT) as client:
                 res = client.post(url, headers=headers, json=payload)
                 if res.status_code == 200:
                     body = res.json()
@@ -153,7 +173,7 @@ def generate_analyst_dossier(topic_id: str = "inflation", archetype: str = "exec
                     parsed["latest_tone"] = latest_tone
                     parsed["archetype"] = archetype
                     parsed["generated_at"] = datetime.now(timezone.utc).isoformat()
-                    parsed["source"] = "gemini-1.5-flash-rag"
+                    parsed["source"] = f"{_GEMINI_MODEL}-rag"
                     parsed["rag_sources"] = rag_facts
                     return parsed
         except Exception:
@@ -174,6 +194,11 @@ def answer_analyst_question(topic_id: str, question: str, archetype: str = "exec
     df_media = global_weekly(topic.label, end=today)
     latest_tone = round(float(df_media["avg_tone"].iloc[-1]), 2) if not df_media.empty else 0.0
 
+    # RAG retrieval for Q&A — grounds the deterministic fallback with facts too
+    retrieved = retrieve_context(topic.label, n_results=2)
+    rag_facts = [r["text"] for r in retrieved]
+    rag_str = " ".join(rag_facts) if rag_facts else ""
+
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
         try:
@@ -181,21 +206,22 @@ def answer_analyst_question(topic_id: str, question: str, archetype: str = "exec
             You are an elite geopolitical analyst. Answer the user's intelligence question regarding '{topic.label}'.
             Archetype Perspective: {archetype}
             Current Net Tone: {latest_tone:+.2f}
+            RETRIEVED FACTUAL CONTEXT: {rag_str if rag_str else 'None available.'}
             Question: "{question}"
 
             Respond strictly in valid JSON:
             {{
-              "answer": "string (comprehensive, structured 2-3 paragraph answer)",
+              "answer": "string (comprehensive, structured 2-3 paragraph answer referencing facts if available)",
               "key_takeaways": ["point 1", "point 2", "point 3"],
               "confidence_score": 0.94
             }}
             """
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"response_mime_type": "application/json"},
             }
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=_GEMINI_API_TIMEOUT) as client:
                 res = client.post(url, headers={"Content-Type": "application/json"}, json=payload)
                 if res.status_code == 200:
                     data = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])
@@ -206,17 +232,21 @@ def answer_analyst_question(topic_id: str, question: str, archetype: str = "exec
                         "answer": data.get("answer", ""),
                         "key_takeaways": data.get("key_takeaways", []),
                         "confidence_score": data.get("confidence_score", 0.90),
-                        "source": "gemini-1.5-flash",
+                        "rag_sources": rag_facts,
+                        "source": _GEMINI_MODEL,
                     }
         except Exception:
             pass
 
-    # Deterministic high-confidence Q&A reasoning fallback
+    # Deterministic high-confidence Q&A reasoning fallback (now includes RAG context)
     q_lower = question.lower()
+    rag_suffix = f" Supporting context: {rag_str}" if rag_str else ""
+
     if any(k in q_lower for k in ["market", "price", "inflation", "yield", "oil", "asset", "fx"]):
         answer = (
             f"Regarding the market implications of {topic.label}, historical econometric regressions indicate that a {latest_tone:+.2f} tone environment creates a statistically significant volatility multiplier. "
             f"Asset classes with direct exposure (such as energy benchmarks and local sovereign yields) will price higher risk premiums if the current media trajectory persists beyond 3 weeks."
+            f"{rag_suffix}"
         )
         takeaways = [
             f"Current tone ({latest_tone:+.2f}) indicates elevated short-term risk pricing.",
@@ -227,6 +257,7 @@ def answer_analyst_question(topic_id: str, question: str, archetype: str = "exec
         answer = (
             f"Forward scenario telemetry for {topic.label} places the highest conditional probability (60%) on a Managed Policy Glidepath. "
             f"However, tail-risk scenarios (15% probability) carry an asymmetrical downside projection of {latest_tone - 4.5:+.2f} net tone, which would trigger sharp narrative contagion across regional allies."
+            f"{rag_suffix}"
         )
         takeaways = [
             "Base-case consensus remains sticky around the current baseline.",
@@ -237,9 +268,10 @@ def answer_analyst_question(topic_id: str, question: str, archetype: str = "exec
         answer = (
             f"Analysis of current intelligence signals for {topic.label} demonstrates that institutional friction and media framing divergence remain the dominant narrative drivers. "
             f"Given the net tone of {latest_tone:+.2f}, stakeholders are operating with defensive postures, prioritizing risk mitigation over aggressive expansion."
+            f"{rag_suffix}"
         )
         takeaways = [
-            f"Strategic posture is defensive across primary governing stakeholders.",
+            "Strategic posture is defensive across primary governing stakeholders.",
             "Institutional rulemaking timelines dictate narrative velocity.",
             "Public opinion gap continues to widen between polarized demographic cohorts.",
         ]
@@ -251,5 +283,93 @@ def answer_analyst_question(topic_id: str, question: str, archetype: str = "exec
         "answer": answer,
         "key_takeaways": takeaways,
         "confidence_score": 0.88,
+        "rag_sources": rag_facts,
         "source": "deterministic_analyst_engine",
+    }
+
+
+def generate_weekly_digest(watchlist_id: str, topic_ids: list[str]) -> dict[str, Any]:
+    """Generate a multi-topic executive digest across an entire watchlist portfolio.
+
+    Produces a concise weekly summary covering tone movements, top movers,
+    and an AI-composed or deterministic cross-portfolio narrative.
+    """
+    today = date.today()
+    topic_summaries = []
+    portfolio_tones = []
+
+    for tid in topic_ids:
+        try:
+            t = resolve_topic(tid)
+            df = global_weekly(t.label, end=today)
+            if df.empty:
+                continue
+            tones = df["avg_tone"].to_numpy()
+            latest = round(float(tones[-1]), 2)
+            prev = round(float(tones[-2]), 2) if len(tones) > 1 else latest
+            delta = round(latest - prev, 2)
+            portfolio_tones.append(latest)
+            topic_summaries.append({
+                "id": t.id,
+                "label": t.label,
+                "category": t.category,
+                "latest_tone": latest,
+                "week_delta": delta,
+                "trend": "improving" if delta > 0.3 else "deteriorating" if delta < -0.3 else "stable",
+            })
+        except Exception:
+            continue
+
+    topic_summaries.sort(key=lambda x: abs(x["week_delta"]), reverse=True)
+    portfolio_avg = round(float(sum(portfolio_tones) / len(portfolio_tones)), 2) if portfolio_tones else 0.0
+    top_mover = topic_summaries[0] if topic_summaries else None
+
+    # Compose digest narrative
+    api_key = os.getenv("GEMINI_API_KEY")
+    narrative = ""
+    source = "deterministic"
+
+    if api_key and topic_summaries:
+        try:
+            summary_text = "\n".join(
+                f"- {s['label']}: tone {s['latest_tone']:+.2f} (Δ {s['week_delta']:+.2f}, {s['trend']})"
+                for s in topic_summaries[:8]
+            )
+            prompt = f"""
+            You are a senior geopolitical intelligence briefer. Write a concise 2-paragraph weekly digest
+            for the '{watchlist_id}' portfolio covering the following topic movements this week:
+            {summary_text}
+            Portfolio average tone: {portfolio_avg:+.2f}
+            Focus on cross-portfolio themes, dominant narratives, and key risks to watch next week.
+            Return plain text only (no JSON, no markdown headers).
+            """
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent?key={api_key}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            with httpx.Client(timeout=_GEMINI_API_TIMEOUT) as client:
+                res = client.post(url, headers={"Content-Type": "application/json"}, json=payload)
+                if res.status_code == 200:
+                    narrative = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    source = _GEMINI_MODEL
+        except Exception:
+            pass
+
+    if not narrative:
+        if top_mover:
+            narrative = (
+                f"This week's {watchlist_id} portfolio registers an average sentiment of {portfolio_avg:+.2f}. "
+                f"The most significant movement was in '{top_mover['label']}' ({top_mover['week_delta']:+.2f} pts, {top_mover['trend']}). "
+                f"Cross-portfolio signals suggest {'caution' if portfolio_avg < -1.0 else 'moderate stability'} heading into next week, "
+                f"with {sum(1 for s in topic_summaries if s['trend'] == 'deteriorating')} topics on a deteriorating trajectory."
+            )
+        else:
+            narrative = f"Insufficient data to generate a digest for watchlist '{watchlist_id}'."
+
+    return {
+        "watchlist_id": watchlist_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "portfolio_avg_tone": portfolio_avg,
+        "topic_count": len(topic_summaries),
+        "top_movers": topic_summaries[:5],
+        "narrative": narrative,
+        "source": source,
     }

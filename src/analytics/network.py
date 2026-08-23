@@ -21,7 +21,7 @@ def build_ideological_network(
 ) -> dict[str, Any]:
     """Generate force-directed graph nodes and correlation edges for political entities with algorithmic community detection."""
     catalog = load_catalog()
-    
+
     if include_topic_id:
         seed = resolve_topic(include_topic_id)
         other_topics = [t for t in catalog if t.id != seed.id][:max_nodes - 1]
@@ -65,15 +65,36 @@ def build_ideological_network(
             for j in range(i + 1, len(labels)):
                 la, lb = labels[i], labels[j]
                 r_val = float(corr_matrix.loc[la, lb])
-                
+
                 if abs(r_val) >= min_correlation and not np.isnan(r_val):
                     edge_width = round(float(abs(r_val) * 4.5 + 0.5), 1)
                     G.add_edge(la, lb, weight=r_val, abs_weight=abs(r_val), width=edge_width)
 
-    # 2. Algorithmic Community Detection (Greedy Modularity Maximization)
+    # Compute node-level centrality metrics before community detection
+    betweenness: dict[str, float] = {}
+    eigenvector: dict[str, float] = {}
+    degree_centrality: dict[str, float] = {}
+
+    if len(G.nodes) > 0:
+        try:
+            betweenness = nx.betweenness_centrality(G, weight="abs_weight", normalized=True)
+            betweenness = {k: round(float(v), 4) for k, v in betweenness.items()}
+        except Exception:
+            betweenness = {n: 0.0 for n in G.nodes}
+
+        try:
+            eigenvector = nx.eigenvector_centrality(G, weight="abs_weight", max_iter=500)
+            eigenvector = {k: round(float(v), 4) for k, v in eigenvector.items()}
+        except Exception:
+            eigenvector = {n: 0.0 for n in G.nodes}
+
+        degree_centrality = nx.degree_centrality(G)
+        degree_centrality = {k: round(float(v), 4) for k, v in degree_centrality.items()}
+
+    # Algorithmic Community Detection (Greedy Modularity Maximization)
     clusters = []
     node_to_cluster = {}
-    
+
     if len(G.nodes) > 0:
         try:
             communities = list(nx.community.greedy_modularity_communities(G, weight="abs_weight"))
@@ -83,7 +104,7 @@ def build_ideological_network(
         for cluster_id, comm in enumerate(communities):
             color = COLOR_PALETTE[cluster_id % len(COLOR_PALETTE)]
             cluster_name = f"Emergent Cluster {cluster_id + 1}"
-            
+
             # Name cluster based on most central node in it (highest degree)
             subgraph = G.subgraph(comm)
             if len(subgraph) > 0:
@@ -96,7 +117,7 @@ def build_ideological_network(
                 "name": cluster_name,
                 "color": color,
             })
-            
+
             for node in comm:
                 node_to_cluster[node] = {
                     "cluster_id": cluster_id,
@@ -107,7 +128,6 @@ def build_ideological_network(
     # Add isolated nodes to a default cluster
     nodes = []
     for nid, data in node_metadata.items():
-        # if no edges, assign to default cluster
         if nid not in node_to_cluster:
             node_to_cluster[nid] = {
                 "cluster_id": 99,
@@ -116,12 +136,15 @@ def build_ideological_network(
             }
             if not any(c["id"] == 99 for c in clusters):
                 clusters.append({"id": 99, "name": "Isolated Nodes", "color": "#94a3b8"})
-        
+
         c_info = node_to_cluster[nid]
         nodes.append({
             **data,
             "cluster_id": c_info["cluster_id"],
             "cluster_name": c_info["cluster_name"],
+            "betweenness_centrality": betweenness.get(nid, 0.0),
+            "eigenvector_centrality": eigenvector.get(nid, 0.0),
+            "degree_centrality": degree_centrality.get(nid, 0.0),
             "itemStyle": {"color": c_info["color"]},
         })
 
@@ -168,10 +191,10 @@ def simulate_contagion_spread(
     """Simulate epidemiological (SIR) narrative shock transmission across network nodes."""
     seed_topic = resolve_topic(seed_topic_id)
     network = build_ideological_network(min_correlation=0.15, max_nodes=40, include_topic_id=seed_topic.id)
-    
+
     node_map = {n["id"]: n for n in network["nodes"]}
     seed_node = node_map.get(seed_topic.id)
-    
+
     if not seed_node:
         seed_node = {
             "id": seed_topic.id,
@@ -187,7 +210,7 @@ def simulate_contagion_spread(
         adj.setdefault(t, []).append({"neighbor": s, "weight": w})
 
     steps_data = []
-    
+
     # State tracking
     infected_nodes: dict[str, float] = {seed_node["id"]: shock_magnitude}
     recovered_nodes: set[str] = set()
@@ -210,7 +233,9 @@ def simulate_contagion_spread(
 
     recovered_nodes.add(seed_node["id"])
     current_wave = {seed_node["id"]: shock_magnitude}
-    np.random.seed(42)  # For reproducible stochastics in demo
+    # Use a module-local RNG (default_rng) rather than the global np.random state
+    # to avoid cross-contaminating other modules that rely on seeded state.
+    rng = np.random.default_rng(42)
 
     for step_num in range(1, max_steps + 1):
         next_wave: dict[str, float] = {}
@@ -226,16 +251,15 @@ def simulate_contagion_spread(
                     continue
 
                 # Stochastic SIR Infection Probability
-                # Infection probability scales with correlation strength
                 infection_prob = min(0.95, max(0.05, abs(r_weight) * 1.5))
-                is_infected = np.random.rand() < infection_prob
+                is_infected = rng.random() < infection_prob
 
                 if is_infected:
                     transmitted_shock = curr_shock * r_weight * attenuation
                     if abs(transmitted_shock) >= 0.10:
                         next_wave[n_id] = transmitted_shock
                         infected_nodes[n_id] = transmitted_shock
-                        
+
                         target_n = node_map.get(n_id, {"name": n_id, "latest_tone": 0.0, "cluster_name": "General"})
                         wave_details.append({
                             "id": n_id,

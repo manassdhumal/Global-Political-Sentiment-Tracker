@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Body, HTTPException
 from pydantic import BaseModel, Field
 from typing import Any
 
-from src.analytics.simulator import simulate_policy_shock, EVENT_PRESETS
+from src.analytics.simulator import simulate_policy_shock, batch_simulate, list_presets, EVENT_PRESETS
 
 router = APIRouter(prefix="/api/simulator", tags=["simulator"])
 
@@ -17,14 +17,16 @@ class SimulationRequest(BaseModel):
     custom_description: str | None = Field(None, description="Optional custom scenario text")
 
 
+class BatchSimulationRequest(BaseModel):
+    topic: str = Field(..., description="Topic slug or identifier")
+    magnitude: float = Field(1.0, ge=0.2, le=3.0, description="Intensity multiplier")
+    weeks_ahead: int = Field(6, ge=2, le=12, description="Simulation horizon in weeks")
+
+
 @router.get("/presets")
-def get_simulation_presets() -> dict[str, Any]:
-    """Return all available predefined geopolitical & macroeconomic shock models."""
-    return {
-        "presets": [
-            {"key": k, **v} for k, v in EVENT_PRESETS.items()
-        ]
-    }
+def get_simulation_presets() -> list[dict[str, Any]]:
+    """Return all available predefined geopolitical & macroeconomic shock models (structured list)."""
+    return list_presets()
 
 
 @router.post("/run")
@@ -37,6 +39,19 @@ def run_simulation(req: SimulationRequest) -> dict[str, Any]:
             magnitude=req.magnitude,
             weeks_ahead=req.weeks_ahead,
             custom_description=req.custom_description,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/batch")
+def run_batch_simulation(req: BatchSimulationRequest) -> dict[str, Any]:
+    """Run all event presets against a topic and return a ranked what-if impact matrix."""
+    try:
+        return batch_simulate(
+            topic_id=req.topic,
+            magnitude=req.magnitude,
+            weeks_ahead=req.weeks_ahead,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

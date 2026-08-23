@@ -14,6 +14,9 @@ from src.cache import cached
 
 COLOR_PALETTE = ["#38bdf8", "#f59e0b", "#10b981", "#ec4899", "#8b5cf6"]
 
+# Minimum observations needed before attempting structural break detection.
+_MIN_DATA_FOR_BREAKS = 20
+
 
 def decompose_hp_filter(series: pd.Series, lamb: float = 1600.0) -> dict[str, Any]:
     """Hodrick-Prescott (HP) Filter: decomposes series into secular trend and business cycle."""
@@ -50,6 +53,12 @@ def decompose_hp_filter(series: pd.Series, lamb: float = 1600.0) -> dict[str, An
         "smoothness_lambda": lamb,
         "cyclical_variance_pct": min(100.0, max(0.0, var_pct)),
     }
+
+
+def compute_ewm_trend(series: pd.Series, span: int = 8) -> list[float]:
+    """Exponentially Weighted Moving Average trend — smoother and more reactive than HP filter."""
+    ewm = series.ewm(span=span, adjust=False).mean()
+    return [round(float(x), 3) for x in ewm]
 
 
 def evaluate_stationarity(series: pd.Series) -> dict[str, Any]:
@@ -100,7 +109,8 @@ def detect_structural_breaks(dates: list[str], series: pd.Series) -> list[dict[s
     """Detect structural regime shifts and permanent trajectory break points."""
     vals = series.to_numpy(dtype=float)
     n = len(vals)
-    if n < 12:
+    # Guard: require minimum data points for meaningful break detection.
+    if n < _MIN_DATA_FOR_BREAKS:
         return []
 
     breaks = []
@@ -147,7 +157,7 @@ def compute_volatility_clustering(series: pd.Series, window: int = 4) -> dict[st
     vals = series.to_numpy(dtype=float)
     s = pd.Series(vals)
     rolling_std = s.rolling(window=window, min_periods=2).std().bfill()
-    
+
     vol_series = [round(float(x), 2) for x in rolling_std]
     current_vol = vol_series[-1] if vol_series else 1.0
     mean_vol = float(np.mean(vol_series)) if vol_series else 1.0
@@ -169,7 +179,7 @@ def compute_volatility_clustering(series: pd.Series, window: int = 4) -> dict[st
 
 @cached(ttl_seconds=300, key_prefix="econometric_ts")
 def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[str, Any]:
-    """Run full econometric time-series analytics on a single topic with volatility bands."""
+    """Run full econometric time-series analytics on a single topic with volatility bands and EWM trend."""
     topic = resolve_topic(topic_id)
     today = date.today()
     df = global_weekly(topic.label, end=today)
@@ -183,16 +193,19 @@ def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[
     # 1. HP Filter Decomposition
     hp = decompose_hp_filter(df["avg_tone"], lamb=lamb)
 
-    # 2. Stationarity Diagnostics
+    # 2. EWM Trend (span=8 weeks)
+    ewm_trend = compute_ewm_trend(df["avg_tone"], span=8)
+
+    # 3. Stationarity Diagnostics
     stationarity = evaluate_stationarity(df["avg_tone"])
 
-    # 3. Structural Break Detection
+    # 4. Structural Break Detection (requires >= _MIN_DATA_FOR_BREAKS points)
     breaks = detect_structural_breaks(dates, df["avg_tone"])
 
-    # 4. Volatility Regimes
+    # 5. Volatility Regimes
     vol = compute_volatility_clustering(df["avg_tone"], window=4)
 
-    # 5. Volatility Confidence Bands (Trend +/- 1.96 * Rolling Std)
+    # 6. Volatility Confidence Bands (Trend +/- 1.96 * Rolling Std)
     trend_arr = np.array(hp["trend"])
     vol_arr = np.array(vol["series"])
     upper_band = [round(float(t + 1.96 * v), 2) for t, v in zip(trend_arr, vol_arr)]
@@ -203,6 +216,7 @@ def analyze_econometric_timeseries(topic_id: str, lamb: float = 1600.0) -> dict[
         "dates": dates,
         "raw_tone": [round(float(x), 2) for x in raw_tone],
         "hp_decomposition": hp,
+        "ewm_trend": ewm_trend,
         "stationarity": stationarity,
         "structural_breaks": breaks,
         "volatility": vol,
@@ -222,7 +236,7 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
 
     today = date.today()
     topic_objs = [resolve_topic(tid) for tid in topic_ids[:4]]
-    
+
     series_list = []
     primary_series: pd.Series | None = None
     common_dates: list[str] = []
@@ -237,8 +251,9 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
             common_dates = dates
 
         hp = decompose_hp_filter(df["avg_tone"], lamb=lamb)
+        ewm = compute_ewm_trend(df["avg_tone"], span=8)
         raw_vals = [round(float(x), 2) for x in df["avg_tone"].to_numpy()]
-        
+
         color = COLOR_PALETTE[i % len(COLOR_PALETTE)]
 
         granger_res = None
@@ -250,11 +265,10 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
                 corr_val = round(float(np.corrcoef(primary_series, df["avg_tone"])[0, 1]), 2)
                 if np.isnan(corr_val):
                     corr_val = 0.0
-                
+
                 # Granger Causality Test (Primary -> Secondary)
                 try:
                     from statsmodels.tsa.stattools import grangercausalitytests
-                    # X = [Secondary (target), Primary (predictor)]
                     test_data = pd.DataFrame({"y": df["avg_tone"], "x": primary_series}).dropna()
                     if len(test_data) > 10:
                         res = grangercausalitytests(test_data, maxlag=[2], verbose=False)
@@ -275,6 +289,7 @@ def analyze_multi_topic_overlay(topic_ids: list[str], lamb: float = 1600.0) -> d
             "color": color,
             "raw_tone": raw_vals,
             "trend": hp["trend"],
+            "ewm_trend": ewm,
             "cycle": hp["cycle"],
             "correlation_with_primary": corr_val,
             "granger_causality": granger_res,
