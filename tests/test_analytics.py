@@ -6,6 +6,8 @@ import pandas as pd
 
 from src.analytics import (weekly_weighted_series, volatility_index,
                            forecast_tone, detect_anomalies, event_impact)
+from src.analytics.polarization import analyze_media_polarization
+from src.analytics.timeseries import analyze_econometric_timeseries
 
 
 def _scores(entity="e1", country="US", n=12, base=0.0, slope=0.5, vol=20):
@@ -27,10 +29,13 @@ def test_weighted_series_collapses_countries():
 
 
 def test_forecast_extends_series():
-    fr = forecast_tone(_scores(n=12).rename(columns={}), periods=4)
+    df = _scores(n=16)  # Give it enough data for ETS
+    fr = forecast_tone(df.rename(columns={}), periods=4)
     assert len(fr.forecast) == 4
-    assert fr.method in {"arima", "linear"}
+    assert fr.method in {"arima", "linear", "ets"}
     assert (fr.forecast["upper"] >= fr.forecast["lower"]).all()
+    assert hasattr(fr, "preferred_method")
+    assert hasattr(fr, "ets_forecast")
 
 
 def test_anomaly_flags_a_clear_spike():
@@ -38,6 +43,10 @@ def test_anomaly_flags_a_clear_spike():
     df.loc[6, "avg_tone"] = 50.0            # inject a clear outlier
     a = detect_anomalies(df[["week_start", "avg_tone"]], z_thresh=3.0)
     assert bool(a["is_anomaly"].any())
+    # Ensure our new fields are populated
+    assert "kind" in a.columns
+    assert "direction" in a.columns
+    assert "shift" in a.columns
 
 
 def test_volatility_ranks_higher_for_noisier_series():
@@ -55,3 +64,16 @@ def test_event_impact_delta():
     res = event_impact(df[["week_start", "avg_tone", "article_volume"]],
                        df["week_start"].iloc[6], window_weeks=3)
     assert res.delta > 0
+
+
+def test_polarization_convergence_trend():
+    res = analyze_media_polarization("inflation")
+    assert "summary" in res
+    assert "convergence_trend" in res["summary"]
+    assert res["summary"]["convergence_trend"] in {"widening", "narrowing", "stable"}
+
+
+def test_timeseries_ewm_trend():
+    res = analyze_econometric_timeseries("inflation")
+    assert "ewm_trend" in res
+    assert len(res["ewm_trend"]) == len(res["raw_tone"])

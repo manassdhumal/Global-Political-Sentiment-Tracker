@@ -27,12 +27,6 @@ def get_network_graph(
     return build_ideological_network(min_correlation=min_correlation, max_nodes=max_nodes)
 
 
-@router.get("/clusters")
-def get_clusters() -> list[dict[str, Any]]:
-    """Return all predefined ideological & thematic clusters."""
-    return list(CATEGORY_CLUSTERS.values())
-
-
 @router.post("/simulate-contagion", response_model=dict[str, Any])
 def run_contagion_simulation(request: ContagionSimRequest) -> dict[str, Any]:
     """Simulate shock propagation across correlated narrative clusters."""

@@ -61,3 +61,16 @@ def test_notifiers_dry_mock():
     assert not send_discord_webhook("http://invalid.local/webhook", alert)
     assert not send_telegram_message("dummy_token", "dummy_chat", alert)
     assert not send_generic_webhook("http://invalid.local/webhook", alert)
+
+
+def test_alerts_engine_evaluate_watchlist():
+    from src.analytics.alerts_engine import evaluate_watchlist
+    res = evaluate_watchlist("macro_energy_inflation", ["inflation"])
+    assert "basket_tone" in res
+    assert "active_alerts" in res
+    if res["active_alerts"]:
+        assert "severity_score" in res["active_alerts"][0]
+        # Check rule types
+        types = [a["type"] for a in res["active_alerts"]]
+        for t in types:
+            assert t in {"TONE_PLUNGE", "VOLATILITY_BURST", "POSITIVE_SURGE", "COVERAGE_SPIKE"}

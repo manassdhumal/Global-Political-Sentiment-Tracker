@@ -36,5 +36,23 @@ def test_ingest_watchlist_synthetic_schema():
     assert res.source_used == "synthetic"
     assert not res.articles.empty
     assert list(res.articles.columns) == RAW_COLUMNS
-    # every configured entity appears
     assert set(res.articles["entity_id"]) == set(wl.entity_ids)
+
+
+def test_reddit_pagination_and_comments():
+    from src.ingestion.reddit_client import fetch_posts, fetch_comments
+    # Just verify the functions exist and are callable with the new signatures
+    assert callable(fetch_posts)
+    assert callable(fetch_comments)
+
+
+def test_bluesky_cursor_and_lang():
+    from src.ingestion.bluesky_client import fetch_posts
+    # Just verify the function exists and accepts the lang parameter
+    assert callable(fetch_posts)
+
+
+def test_gdelt_country_tone_and_bq_stub():
+    from src.ingestion.gdelt_client import fetch_country_tone_breakdown, fetch_bigquery_articles
+    assert callable(fetch_country_tone_breakdown)
+    assert callable(fetch_bigquery_articles)

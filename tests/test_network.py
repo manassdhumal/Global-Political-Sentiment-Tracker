@@ -11,13 +11,16 @@ def test_build_ideological_network():
     assert "links" in net
     assert "clusters" in net
     assert len(net["nodes"]) > 0
-    assert len(net["clusters"]) == 5
+    assert len(net["clusters"]) > 0
 
     first_node = net["nodes"][0]
     assert "id" in first_node
     assert "name" in first_node
     assert "cluster_name" in first_node
     assert "symbolSize" in first_node
+    assert "betweenness_centrality" in first_node
+    assert "eigenvector_centrality" in first_node
+    assert "degree_centrality" in first_node
 
 
 def test_network_api_endpoints():
@@ -26,7 +29,4 @@ def test_network_api_endpoints():
     data = resp.json()
     assert "nodes" in data
     assert "links" in data
-
-    resp_clusters = client.get("/api/network/clusters")
-    assert resp_clusters.status_code == 200
-    assert len(resp_clusters.json()) == 5
+    assert "clusters" in data

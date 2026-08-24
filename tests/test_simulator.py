@@ -22,6 +22,32 @@ def test_simulate_policy_shock_rate_hike():
     assert res["metrics"]["recovery_weeks"] > 0
 
 
+def test_simulate_policy_shock_new_presets():
+    res = simulate_policy_shock(
+        topic_id="inflation",
+        event_type="trade_war",
+        magnitude=1.0,
+        weeks_ahead=6,
+    )
+    assert res["event"]["type"] == "trade_war"
+    
+    res = simulate_policy_shock(
+        topic_id="inflation",
+        event_type="climate_accord",
+        magnitude=1.0,
+        weeks_ahead=6,
+    )
+    assert res["event"]["type"] == "climate_accord"
+    
+    res = simulate_policy_shock(
+        topic_id="inflation",
+        event_type="leadership_change",
+        magnitude=1.0,
+        weeks_ahead=6,
+    )
+    assert res["event"]["type"] == "leadership_change"
+
+
 def test_simulate_policy_shock_custom():
     res = simulate_policy_shock(
         topic_id="donald_trump",
@@ -38,7 +64,7 @@ def test_simulator_api_endpoints():
     # Presets
     resp_presets = client.get("/api/simulator/presets")
     assert resp_presets.status_code == 200
-    assert "presets" in resp_presets.json()
+    assert isinstance(resp_presets.json(), list)
 
     # Run simulation
     payload = {
@@ -52,3 +78,15 @@ def test_simulator_api_endpoints():
     data = resp.json()
     assert "metrics" in data
     assert "simulation" in data
+
+    # Batch simulation
+    batch_payload = {
+        "topic": "inflation",
+        "magnitude": 1.0,
+        "weeks_ahead": 6,
+    }
+    resp_batch = client.post("/api/simulator/batch", json=batch_payload)
+    assert resp_batch.status_code == 200
+    batch_data = resp_batch.json()
+    assert "ranked_events" in batch_data
+    assert len(batch_data["ranked_events"]) > 5  # should have all presets
