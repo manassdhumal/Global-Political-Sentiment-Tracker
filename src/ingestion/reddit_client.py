@@ -40,13 +40,20 @@ def _client():
 
 
 def fetch_posts(entity_id: str, query: str, start: date, end: date, *,
-                limit: int = 200, client=None) -> list[OpinionPost]:
+                limit: int = 200, subreddits: list[str] | None = None,
+                client=None) -> list[OpinionPost]:
     reddit = client or _client()
     lo = datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc).timestamp()
     hi = datetime.combine(end, datetime.max.time(), tzinfo=timezone.utc).timestamp()
     posts: list[OpinionPost] = []
+    
+    # Reddit search breaks if limit > 100 on some endpoints, so paginate internally.
+    target_limit = min(limit, 1000)
+    subs = "+".join(subreddits) if subreddits else "all"
+    
     try:
-        for sub in reddit.subreddit("all").search(query, sort="new", limit=limit):
+        # PRAW handles internal pagination for .search(), but we cap it explicitly.
+        for sub in reddit.subreddit(subs).search(query, sort="new", limit=target_limit):
             created = float(getattr(sub, "created_utc", 0) or 0)
             if not (lo <= created <= hi):
                 continue
@@ -62,7 +69,28 @@ def fetch_posts(entity_id: str, query: str, start: date, end: date, *,
                 created_date=datetime.fromtimestamp(created, timezone.utc)
                     .strftime("%Y-%m-%d"),
                 author=author,
-                url=f"https://reddit.com{getattr(sub, 'permalink', '')}"))
+                url=f"https://reddit.com{getattr(sub, 'permalink', '')}",
+                metadata={"post_id": getattr(sub, "id", "")}
+            ))
     except Exception as exc:
         raise OpinionError(f"Reddit search failed: {exc}")
     return posts
+
+
+def fetch_comments(post_id: str, limit: int = 10, client=None) -> list[str]:
+    """Fetch top-level comments for a specific post id to enrich sentiment signal."""
+    reddit = client or _client()
+    try:
+        submission = reddit.submission(id=post_id)
+        submission.comment_sort = "top"
+        submission.comments.replace_more(limit=0)  # flatten trees, drop 'more comments' stubs
+        
+        comments = []
+        for comment in submission.comments[:limit]:
+            text = getattr(comment, "body", "").strip()
+            if text and text != "[deleted]" and text != "[removed]":
+                comments.append(text[:300])
+        return comments
+    except Exception as exc:
+        # Silently fail for comment enrichment
+        return []

@@ -24,9 +24,11 @@ synthetic source (see ingest.py, source='auto') when GDELT is unavailable.
 from __future__ import annotations
 
 import time
+import threading
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import Optional
+import os
 
 import requests
 
@@ -36,6 +38,7 @@ _USER_AGENT = "GlobalPoliticalSentimentTracker/0.1 (research; contact via app)"
 # GDELT asks for gentle pacing; keep >=5s between calls from one client.
 _MIN_INTERVAL_S = 5.0
 _last_call_ts = 0.0
+_throttle_lock = threading.Lock()
 
 
 class GdeltError(RuntimeError):
@@ -55,10 +58,11 @@ class GdeltArticle:
 
 def _throttle() -> None:
     global _last_call_ts
-    wait = _MIN_INTERVAL_S - (time.monotonic() - _last_call_ts)
-    if wait > 0:
-        time.sleep(wait)
-    _last_call_ts = time.monotonic()
+    with _throttle_lock:
+        wait = _MIN_INTERVAL_S - (time.monotonic() - _last_call_ts)
+        if wait > 0:
+            time.sleep(wait)
+        _last_call_ts = time.monotonic()
 
 
 def _fmt_dt(d: date) -> str:
@@ -182,6 +186,53 @@ def fetch_articles(query: str, country: str | None = None, start: date = None,
     finally:
         if close_session:
             session.close()
+
+
+def fetch_country_tone_breakdown(
+    query: str, start: date, end: date, *,
+    top_n: int = 8, session: Optional[requests.Session] = None
+) -> dict[str, float]:
+    """Sweep top countries to get their specific tone on a query.
+    Useful for geographical heatmap / polarity analytics.
+    """
+    # Common high-volume GDELT country codes (FIPS 10-4)
+    target_countries = ["US", "UK", "CH", "RS", "IN", "FR", "GM", "JA", "BR", "CA"][:top_n]
+    results: dict[str, float] = {}
+    
+    close_session = session is None
+    session = session or requests.Session()
+    try:
+        for cc in target_countries:
+            try:
+                tones = fetch_daily_tone(query, country=cc, start=start, end=end, session=session)
+                if tones:
+                    results[cc] = round(sum(tones.values()) / len(tones), 2)
+            except GdeltError:
+                continue
+        return results
+    finally:
+        if close_session:
+            session.close()
+
+
+def fetch_bigquery_articles(query: str, start: date, end: date, limit: int = 500) -> list[GdeltArticle]:
+    """Stub for the GDELT GKG BigQuery high-throughput path.
+    Requires google-cloud-bigquery and GPST_BQ_PROJECT env var.
+    """
+    bq_project = os.getenv("GPST_BQ_PROJECT")
+    if not bq_project:
+        raise GdeltError("GPST_BQ_PROJECT not set. BigQuery path disabled.")
+    
+    try:
+        from google.cloud import bigquery
+        client = bigquery.Client(project=bq_project)
+    except ImportError:
+        raise GdeltError("google-cloud-bigquery not installed.")
+    except Exception as exc:
+        raise GdeltError(f"Failed to initialize BigQuery client: {exc}")
+    
+    # Query logic would go here. For now, raise unimplemented to fall back.
+    raise GdeltError("BigQuery extraction query logic not yet implemented.")
 
 
 def health_check() -> bool:

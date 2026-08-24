@@ -37,28 +37,66 @@ def _parse_dt(s: str) -> str:
 
 
 def fetch_posts(entity_id: str, query: str, start: date, end: date, *,
-                limit: int = 100, client=None) -> list[OpinionPost]:
+                limit: int = 100, lang: str = "en", client=None) -> list[OpinionPost]:
     bsky = client or _client()
     posts: list[OpinionPost] = []
+    cursor = None
+    
+    # Cap internal loop to prevent runaway fetching if limit is very high
+    max_loops = (limit // 100) + 2
+    
     try:
-        resp = bsky.app.bsky.feed.search_posts({"q": query, "limit": limit})
-        for p in getattr(resp, "posts", []) or []:
-            rec = getattr(p, "record", None)
-            text = getattr(rec, "text", "") if rec else ""
-            created = getattr(rec, "created_at", "") if rec else ""
-            day = _parse_dt(created) if created else None
-            if day is None:
-                continue
-            d = date.fromisoformat(day)
-            if not (start <= d <= end):
-                continue
-            author = getattr(getattr(p, "author", None), "handle", "") or "unknown"
-            uri = getattr(p, "uri", "")
-            posts.append(OpinionPost(
-                entity_id=entity_id, source="bluesky", community="bluesky",
-                lang="en", text=(text or "").strip()[:500],
-                created_date=day, author=author,
-                url=f"https://bsky.app/profile/{author}"))
+        for _ in range(max_loops):
+            # Try to pass as kwargs (newer atproto), fallback to dict (older)
+            try:
+                resp = bsky.app.bsky.feed.search_posts(q=query, limit=100, cursor=cursor)
+            except Exception:
+                params = {"q": query, "limit": 100}
+                if cursor:
+                    params["cursor"] = cursor
+                resp = bsky.app.bsky.feed.search_posts(params)
+                
+            fetched_posts = getattr(resp, "posts", []) or []
+            if not fetched_posts:
+                break
+                
+            for p in fetched_posts:
+                if len(posts) >= limit:
+                    break
+                    
+                rec = getattr(p, "record", None)
+                if not rec:
+                    continue
+                    
+                # Language filter
+                langs = getattr(rec, "langs", [])
+                if lang and langs and lang not in langs:
+                    continue
+                    
+                text = getattr(rec, "text", "")
+                created = getattr(rec, "created_at", "")
+                day = _parse_dt(created) if created else None
+                if not day:
+                    continue
+                    
+                d = date.fromisoformat(day)
+                if not (start <= d <= end):
+                    continue
+                    
+                author = getattr(getattr(p, "author", None), "handle", "") or "unknown"
+                posts.append(OpinionPost(
+                    entity_id=entity_id, source="bluesky", community="bluesky",
+                    lang=lang, text=(text or "").strip()[:500],
+                    created_date=day, author=author,
+                    url=f"https://bsky.app/profile/{author}"))
+            
+            if len(posts) >= limit:
+                break
+                
+            cursor = getattr(resp, "cursor", None)
+            if not cursor:
+                break
+                
     except Exception as exc:
         raise OpinionError(f"Bluesky search failed: {exc}")
     return posts
